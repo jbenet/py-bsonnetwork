@@ -101,7 +101,7 @@ class BsonRouterProtocol(BsonProtocol):
     self.factory.forward(doc)
 
   def sendDocument(self, doc):
-    LOG.info('[%s] sending document %s' % (self.clientid, str(doc)))
+    LOG.debug('[%s] sending document %s' % (self.clientid, str(doc)))
     try:
       self.sendBson(doc)
     except Exception, e:
