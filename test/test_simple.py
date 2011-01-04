@@ -33,7 +33,6 @@ class TestSimpleOne:
   def __connect(self, clientid):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('', self.port))
-    sock.sendobj({'_src':clientid})
     self.socks[clientid] = sock
     self.__waitForOutput('connection made')
     return sock
@@ -49,6 +48,7 @@ class TestSimpleOne:
     self.__waitForOutput('client connected: %s' % clientid)
 
   def __send(self, doc):
+    print '===> SENDING: ', doc
     self.socks[doc['_src']].sendobj(doc)
 
   def __receive(self, docs, printall=False):
@@ -61,6 +61,7 @@ class TestSimpleOne:
         print self.router.stderr.readline().strip()
 
       doc2 = self.socks[doc['_dst']].recvobj()
+      print '===> RECEIVED: ', doc2
       if not utils.dicts_equal(doc, doc2):
         print 'Document mismatch!!'
         print doc
@@ -138,7 +139,6 @@ class TestSimpleOne:
     self.__identify('B')
     self.__identify('A')
 
-    recv = []
     for pair in [('A', 'B'), ('B', 'A'), ('A', 'A'), ('B', 'B')]:
       seq = map(lambda x: utils.random_dict(), range(0, 10))
       for elem in seq:
@@ -146,8 +146,7 @@ class TestSimpleOne:
         elem['_src'] = pair[0]
         elem['_dst'] = pair[1]
         self.__send(elem)
-      recv += seq
-    self.__receive(recv)
+      self.__receive(seq)
 
     self.__disconnect('A')
     self.__disconnect('B')

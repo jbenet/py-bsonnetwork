@@ -13,19 +13,25 @@ class BsonProtocol(Protocol, _PauseableMixin):
   '''
   Generic class for bson protocols.
   Heavily based on twisted.protocols.basic.IntNReceiver
-  It needed to be rewritten because of the fundamental difference that
-  bson counts the length of the prefix in the doc length.
+  It needed to be rewritten (instead of deriving) because of a fundamental
+  difference: bson counts the length of the prefix in the doc length. hacking
+  around that is unclean.
+
+  WARNING: this class assumes correctly formed bson docs. There is a bit of
+           checking, in case the doc doesnt quite convert. However, the first
+           int32 read (bson doc length) is taken at face value. If it happens
+           to be wrong, it will hose all the data that it covers, as the bson
+           doc won't parse properly.
+
   @author Juan Batiz-Benet
 
-  @ivar recvd: buffer holding received data when splitted.
+  @ivar recvd: buffer holding received data.
   @type recvd: C{str}
-
   '''
 
   recv_buffer = ''
-  send_buffer = ''
 
-  max_bytes = 16777216 # 16 MB
+  max_bytes = 16777216 # 16 MB (current bson limit is 4, +proposed inc to 16)
 
   length_fmt = '<i' # this may change in the future.
   length_size = struct.calcsize(length_fmt)
@@ -38,7 +44,6 @@ class BsonProtocol(Protocol, _PauseableMixin):
     '''
     Callback invoked when a length prefix greater than max_bytes is
     received.  The default implementation disconnects the transport.
-    Override this.
 
     @param length: The length prefix which was received.
     @type length: C{int}
@@ -49,26 +54,31 @@ class BsonProtocol(Protocol, _PauseableMixin):
     ''' For Subclasses to implement. '''
     raise NotImplementedError
 
-  def sendBson(self, bsonDoc):
+  def sendBsonData(self, bsonData):
     '''
-    Send an prefixed string to the other end of the connection.
-
-    @type data: C{str}
+    Send bson data to the other end of the connection.
+    This is useful if you are sending an unparsed bson doc
     '''
-    bsonData = bson.dumps(bsonDoc) # let exceptions propagate up
-
     if len(bsonData) >= self.max_bytes:
       errorStr = 'Trying to send %d bytes whereas maximum is %d'
       raise StringTooLongError(errorStr % (len(bsonData), self.max_bytes))
-
     self.transport.write(bsonData)
+
+  def sendBson(self, bsonDoc):
+    '''
+    Send a bson document to the other end of the connection.
+
+    @type data: C{str}
+    '''
+    self.sendBsonData(bson.dumps(bsonDoc)) # let exceptions propagate up
+
 
   def dataReceived(self, received):
     '''Receive int prefixed data until full bson doc.'''
 
     self.recv_buffer = self.recv_buffer + received
-    while len(self.recv_buffer) >= self.length_size and not self.paused:
 
+    while len(self.recv_buffer) >= self.length_size and not self.paused:
       length ,= struct.unpack(
         self.length_fmt, self.recv_buffer[:self.length_size])
 

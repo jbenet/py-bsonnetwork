@@ -6,7 +6,7 @@ import bson
 import logging
 import optparse
 
-from bsonprotocol import BsonProtocol
+from bsonnetwork import BsonNetworkProtocol
 
 from twisted.protocols.basic import IntNStringReceiver
 from twisted.internet.protocol import Protocol
@@ -68,82 +68,35 @@ class BsonRouterQueue(object):
     return doc
 
 
-class BsonRouterProtocol(BsonProtocol):
-  def connectionMade(self):
-    self.clientid = None
-    LOG.info('[%s] connection made' % self.clientid)
+class BsonRouterProtocol(BsonNetworkProtocol):
 
-  def connectionLost(self, reason):
-    self.close()
-    LOG.info('[%s] connection closed' % self.clientid)
-
-  def close(self):
-    self.transport.loseConnection()
-    if self.clientid:
-      self.factory.removeClient(self.clientid)
-
-  def handleDoc(self, doc):
+  def messageReceived(self, msg):
     LOG.info('[%s] handling control message' % self.clientid)
-    self.clientid = doc['_src'] # set client id as this source.
+    self.clientid = msg['_src'] # set client id as this source.
     self.factory.registerClient(self.clientid, self)
 
-  def bsonReceived(self, doc):
-    LOG.debug('[%s] bson document received' % self.clientid)
-    if not self.validDocument(doc):
-      LOG.info('[%s] data discarded (invalid document)' % self.clientid)
-      return
+  def forwardMessageReceived(self, msg):
+    if '_dst' in msg:
+      self.factory.forward(msg)
+    else:
+      self.messageReceived(msg)
 
-    LOG.debug('[%s] document parsed %s' % (self.clientid, str(doc)))
-    if '_dst' not in doc:
-      self.handleDoc(doc)
-      return
-
-    self.factory.forward(doc)
-
-  def sendDocument(self, doc):
-    LOG.debug('[%s] sending document %s' % (self.clientid, str(doc)))
-    try:
-      self.sendBson(doc)
-    except Exception, e:
-      LOG.error('[%s] sending bson document error: %s' % (self.clientid, e))
-
-
-  def bsonDecodingError(self, error):
-    LOG.error('[%s] received bson parsing error: %s' % (self.clientid, e))
-
-  def validDocument(self, doc):
-    if '_src' not in doc:
-      LOG.error('[%s] bson document invalid: no source id.' % self.clientid)
-      return False
-
-    if self.clientid and doc['_src'] != self.clientid:
-      LOG.error('[%s] bson document invalid: source id mismatch (%s)'
-        % (self.clientid, doc['_src']))
-      return False
-
-    if not self.factory.options.secret:
-      return True
-
-    if '_sec' not in doc:
-      LOG.error('[%s] bson document invalid: no secret' % self.clientid)
-      return False
-
-    if doc['_sec'] != self.factory.options.secret:
-      LOG.error('[%s] bson document invalid: secret mismatch (%s)'
-        % (self.clientid, doc['_sec']))
-      return False
-
-    return True
-
+  def close(self):
+    self.factory.removeClient(self.clientid)
+    BsonNetworkProtocol.close(self)
 
 class BsonRouterFactory(ServerFactory):
 
   protocol = BsonRouterProtocol
 
   def __init__(self, options):
+    self.protocol.logging = LOG
     self.connections_ = {}
     self.queue_ = BsonRouterQueue(options.queue)
     self.options = options
+
+  def clientid(self):
+    return '$router'
 
   def registerClient(self, clientid, conn):
     if len(self.connections_) > self.options.clients:
@@ -155,7 +108,7 @@ class BsonRouterFactory(ServerFactory):
     self.connections_[clientid] = conn
     queued = self.queue_.length(clientid)
     while queued > 0:
-      conn.sendDocument(self.queue_.dequeue(clientid))
+      conn.sendMessage(self.queue_.dequeue(clientid))
       queued -= 1
 
   def removeClient(self, clientid):
@@ -167,7 +120,7 @@ class BsonRouterFactory(ServerFactory):
     LOG.info('[router] forwarding document from %(_src)s to %(_dst)s' % doc)
     clientid = doc['_dst']
     if clientid in self.connections_:
-      self.connections_[clientid].sendDocument(doc)
+      self.connections_[clientid].sendMessage(doc)
     else:
       self.queue_.enqueue(clientid, doc)
 
