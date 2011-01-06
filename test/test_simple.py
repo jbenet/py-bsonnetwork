@@ -48,7 +48,6 @@ class TestSimpleOne:
     self.__waitForOutput('client connected: %s' % clientid)
 
   def __send(self, doc):
-    print '===> SENDING: ', doc
     self.socks[doc['_src']].sendobj(doc)
 
   def __receive(self, docs, printall=False):
@@ -61,7 +60,6 @@ class TestSimpleOne:
         print self.router.stderr.readline().strip()
 
       doc2 = self.socks[doc['_dst']].recvobj()
-      print '===> RECEIVED: ', doc2
       if not utils.dicts_equal(doc, doc2):
         print 'Document mismatch!!'
         print doc

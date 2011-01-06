@@ -71,7 +71,7 @@ class BsonRouterQueue(object):
 class BsonRouterProtocol(BsonNetworkProtocol):
 
   def messageReceived(self, msg):
-    LOG.info('[%s] handling control message' % self.clientid)
+    self.log('info', 'handling control message')
     self.clientid = msg['_src'] # set client id as this source.
     self.factory.registerClient(self.clientid, self)
 

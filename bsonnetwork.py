@@ -14,7 +14,7 @@ class BsonNetworkProtocol(BsonProtocol):
 
     logfn = getattr(self.logging, level)
     if logfn:
-      logfn('[%s] %s' % (self.clientid, message))
+      logfn('[BN] [%s] %s' % (self.clientid, message))
 
   def connectionMade(self):
     self.clientid = None
