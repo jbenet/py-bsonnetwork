@@ -35,6 +35,10 @@ class BsonNetworkProtocol(BsonProtocol):
     '''Override this to handle a packet addressed to this service.'''
     raise NotImplementedError
 
+  def controlMessageReceived(self, msg):
+    '''Identify sender by default.'''
+    self.clientid = msg['_src']
+
   def forwardMessageReceived(self, msg):
     '''Drop bson docs not for us by default.'''
     pass
@@ -48,8 +52,7 @@ class BsonNetworkProtocol(BsonProtocol):
     self.log('debug', 'document parsed %s' % str(doc))
     if '_dst' not in doc:
       self.log('debug', 'handling identification message')
-      self.clientid = doc['_src']
-      self.messageReceived(doc)
+      self.controlMessageReceived(doc)
       return
 
     if doc['_dst'] != self.factory.clientid():
