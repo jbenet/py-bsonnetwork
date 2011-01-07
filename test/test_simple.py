@@ -22,6 +22,9 @@ class TestSimpleOne:
     self.router = Popen(cmd, shell=True, stderr=PIPE)
     self.__waitForOutput('Starting BsonNetwork Router')
 
+  def teardown(self):
+    self.router.kill()
+
   def __waitForOutput(self, output):
     print '===> Waiting for: %s' % output
     while True:
@@ -35,6 +38,8 @@ class TestSimpleOne:
     sock.connect(('', self.port))
     self.socks[clientid] = sock
     self.__waitForOutput('connection made')
+    self.__waitForOutput('sending identification message')
+    self.socks[clientid].recvobj()
     return sock
 
   def __disconnect(self, clientid):
@@ -196,4 +201,5 @@ if __name__ == '__main__':
       t = TestSimpleOne()
       t.setup()
       getattr(TestSimpleOne, member)(t)
+      t.teardown()
 

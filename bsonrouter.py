@@ -71,15 +71,10 @@ class BsonRouterQueue(object):
 class BsonRouterProtocol(BsonNetworkProtocol):
 
   def messageReceived(self, msg):
-    self.log('info', 'handling control message')
-    self.clientid = msg['_src'] # set client id as this source.
     self.factory.registerClient(self.clientid, self)
 
   def forwardMessageReceived(self, msg):
-    if '_dst' in msg:
-      self.factory.forward(msg)
-    else:
-      self.messageReceived(msg)
+    self.factory.forward(msg)
 
   def close(self):
     self.factory.removeClient(self.clientid)

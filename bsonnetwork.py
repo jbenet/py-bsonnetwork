@@ -20,6 +20,10 @@ class BsonNetworkProtocol(BsonProtocol):
     self.clientid = None
     self.log('info', 'connection made')
 
+    # send identification message
+    self.log('debug', 'sending identification message')
+    self.sendBson({'_src' : self.factory.clientid()})
+
   def connectionLost(self, reason):
     self.close()
 
@@ -42,7 +46,13 @@ class BsonNetworkProtocol(BsonProtocol):
       return
 
     self.log('debug', 'document parsed %s' % str(doc))
-    if '_dst' not in doc or doc['_dst'] != self.factory.clientid():
+    if '_dst' not in doc:
+      self.log('debug', 'handling identification message')
+      self.clientid = doc['_src']
+      self.messageReceived(doc)
+      return
+
+    if doc['_dst'] != self.factory.clientid():
       self.forwardMessageReceived(doc)
       return
 

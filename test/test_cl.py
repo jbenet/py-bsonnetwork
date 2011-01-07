@@ -18,6 +18,9 @@ class TestSimpleOne:
 
     self.socks = {}
 
+  def teardown(self):
+    pass
+
   def __waitForOutput(self, output):
     pass
 
@@ -26,6 +29,8 @@ class TestSimpleOne:
     sock.connect(('', self.port))
     self.socks[clientid] = sock
     self.__waitForOutput('connection made')
+    self.__waitForOutput('sending identification message')
+    self.socks[clientid].recvobj()
     return sock
 
   def __disconnect(self, clientid):
@@ -187,4 +192,5 @@ if __name__ == '__main__':
       t = TestSimpleOne()
       t.setup()
       getattr(TestSimpleOne, member)(t)
+      t.teardown()
 
