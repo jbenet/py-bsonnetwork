@@ -18,7 +18,7 @@ class BsonNetworkProtocol(BsonProtocol):
 
   def connectionMade(self):
     self.clientid = None
-    self.log('info', 'connection made')
+    self.log('debug', 'connection made')
 
     # send identification message
     self.log('debug', 'sending identification message')
@@ -38,6 +38,7 @@ class BsonNetworkProtocol(BsonProtocol):
   def controlMessageReceived(self, msg):
     '''Identify sender by default.'''
     self.clientid = msg['_src']
+    self.log('debug', 'connection identified')
 
   def forwardMessageReceived(self, msg):
     '''Drop bson docs not for us by default.'''
@@ -46,7 +47,7 @@ class BsonNetworkProtocol(BsonProtocol):
   def bsonReceived(self, doc):
     self.log('debug', 'bson document received')
     if not self.validMessage(doc):
-      LOG.info('[%s] data discarded (invalid document)' % self.clientid)
+      self.log('debug', 'data discarded (invalid document)')
       return
 
     self.log('debug', 'document parsed %s' % str(doc))
@@ -84,9 +85,9 @@ class BsonNetworkProtocol(BsonProtocol):
       self.log('error', invalid % 'no source id.')
       return False
 
-    if self.clientid and doc['_src'] != self.clientid:
-      self.log('error', invalid % 'source id mismatch (%s)' % doc['_src'])
-      return False
+    # if self.clientid and doc['_src'] != self.clientid:
+    #   self.log('error', invalid % 'source id mismatch (%s)' % doc['_src'])
+    #   return False
 
     if not self.factory.options.secret:
       return True

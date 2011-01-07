@@ -71,7 +71,7 @@ class BsonRouterQueue(object):
 class BsonRouterProtocol(BsonNetworkProtocol):
 
   def messageReceived(self, msg):
-    pass # router doesnt get messages.
+    self.log('error', 'router received message addressed to it.')
 
   def controlMessageReceived(self, msg):
     BsonNetworkProtocol.controlMessageReceived(self, msg)
