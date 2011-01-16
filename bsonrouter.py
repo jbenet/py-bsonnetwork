@@ -120,8 +120,10 @@ class BsonRouterFactory(ServerFactory):
     clientid = doc['_dst']
     if clientid in self.connections_:
       self.connections_[clientid].sendMessage(doc)
-    else:
+    elif '_que' in doc and doc['_que']:
       self.queue_.enqueue(clientid, doc)
+    else:
+      LOG.info('[router] dropped document from %(_src)s to %(_dst)s' % doc)
 
 
 def setupLogger(level=logging.ERROR):
@@ -209,6 +211,7 @@ def main():
   port = reactor.listenTCP(options.port, factory)
 
   LOG.info('Starting BsonNetwork Router on %s' % port.getHost())
+  LOG.info('options: %s' % options)
   reactor.run()
 
 
