@@ -12,6 +12,7 @@ from twisted.protocols.basic import IntNStringReceiver
 from twisted.internet.protocol import Protocol
 from twisted.internet.protocol import ServerFactory
 
+version = '0.2.24'
 LOG = logging
 
 
@@ -210,7 +211,7 @@ def main():
 
   port = reactor.listenTCP(options.port, factory)
 
-  LOG.info('Starting BsonNetwork Router on %s' % port.getHost())
+  LOG.info('Starting BsonNetwork Router v%s on %s' % (version, port.getHost()))
   LOG.info('options: %s' % options)
   reactor.run()
 
