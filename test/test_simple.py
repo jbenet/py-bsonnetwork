@@ -20,12 +20,12 @@ class TestSimpleOne:
 
     cmd = './bsonrouter.py -p %d -l debug' % self.port
     self.router = Popen(cmd, shell=True, stderr=PIPE)
-    self.__waitForOutput('Starting BsonNetwork Router')
+    self.waitForOutput('Starting BsonNetwork Router')
 
   def teardown(self):
     self.router.kill()
 
-  def __waitForOutput(self, output):
+  def waitForOutput(self, output):
     print '===> Waiting for: %s' % output
     while True:
       line = self.router.stderr.readline()
@@ -33,34 +33,34 @@ class TestSimpleOne:
       if output in line:
         return
 
-  def __connect(self, clientid):
+  def connect(self, clientid):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('', self.port))
     self.socks[clientid] = sock
-    self.__waitForOutput('connection made')
-    self.__waitForOutput('sending identification message')
+    self.waitForOutput('connection made')
+    self.waitForOutput('sending identification message')
     self.socks[clientid].recvobj()
     return sock
 
-  def __disconnect(self, clientid):
+  def disconnect(self, clientid):
     sock = self.socks[clientid]
     sock.close()
     del self.socks[clientid]
-    self.__waitForOutput('connection closed')
+    self.waitForOutput('connection closed')
 
-  def __identify(self, clientid):
+  def identify(self, clientid):
     self.socks[clientid].sendobj( { '_src' : clientid } )
-    self.__waitForOutput('client connected: %s' % clientid)
+    self.waitForOutput('client connected: %s' % clientid)
 
   def __send(self, doc):
     self.socks[doc['_src']].sendobj(doc)
 
-  def __receive(self, docs, printall=False):
+  def receive(self, docs, printall=False):
     if not isinstance(docs, list):
       docs = [docs]
 
     for doc in docs:
-      self.__waitForOutput('[%(_dst)s] sending document' % doc)
+      self.waitForOutput('[%(_dst)s] sending document' % doc)
       while printall:
         print self.router.stderr.readline().strip()
 
@@ -75,55 +75,55 @@ class TestSimpleOne:
     doc['_src'] = src
     doc['_dst'] = dst
     self.__send(doc)
-    self.__receive(doc)
+    self.receive(doc)
 
   def test_connect(self):
-    self.__connect('A')
-    self.__disconnect('A')
+    self.connect('A')
+    self.disconnect('A')
 
   def test_identify(self):
-    self.__connect('A')
-    self.__identify('A')
-    self.__disconnect('A')
+    self.connect('A')
+    self.identify('A')
+    self.disconnect('A')
 
   def test_connect_two(self):
-    self.__connect('A')
-    self.__connect('B')
-    self.__disconnect('A')
-    self.__disconnect('B')
+    self.connect('A')
+    self.connect('B')
+    self.disconnect('A')
+    self.disconnect('B')
 
   def test_identify_two(self):
-    self.__connect('A')
-    self.__connect('B')
-    self.__identify('B')
-    self.__identify('A')
-    self.__disconnect('A')
-    self.__disconnect('B')
+    self.connect('A')
+    self.connect('B')
+    self.identify('B')
+    self.identify('A')
+    self.disconnect('A')
+    self.disconnect('B')
 
   def test_send_self(self):
-    self.__connect('A')
-    self.__identify('A')
+    self.connect('A')
+    self.identify('A')
 
     self.__send_and_receive('A', 'A', {'herp' : 'derp'})
 
-    self.__disconnect('A')
+    self.disconnect('A')
 
   def test_send_simple(self):
-    self.__connect('A')
-    self.__connect('B')
-    self.__identify('B')
-    self.__identify('A')
+    self.connect('A')
+    self.connect('B')
+    self.identify('B')
+    self.identify('A')
 
     self.__send_and_receive('A', 'B', {'herp' : 'derp'})
 
-    self.__disconnect('A')
-    self.__disconnect('B')
+    self.disconnect('A')
+    self.disconnect('B')
 
   def test_send_more(self):
-    self.__connect('A')
-    self.__connect('B')
-    self.__identify('B')
-    self.__identify('A')
+    self.connect('A')
+    self.connect('B')
+    self.identify('B')
+    self.identify('A')
 
     seq = map(lambda x: utils.random_dict(), range(0, 10))
     for elem in seq:
@@ -131,16 +131,16 @@ class TestSimpleOne:
       elem['_src'] = 'A'
       elem['_dst'] = 'B'
       self.__send(elem)
-    self.__receive(seq)
+    self.receive(seq)
 
-    self.__disconnect('A')
-    self.__disconnect('B')
+    self.disconnect('A')
+    self.disconnect('B')
 
   def test_send_much(self):
-    self.__connect('A')
-    self.__connect('B')
-    self.__identify('B')
-    self.__identify('A')
+    self.connect('A')
+    self.connect('B')
+    self.identify('B')
+    self.identify('A')
 
     for pair in [('A', 'B'), ('B', 'A'), ('A', 'A'), ('B', 'B')]:
       seq = map(lambda x: utils.random_dict(), range(0, 10))
@@ -149,41 +149,43 @@ class TestSimpleOne:
         elem['_src'] = pair[0]
         elem['_dst'] = pair[1]
         self.__send(elem)
-      self.__receive(seq)
+      self.receive(seq)
 
-    self.__disconnect('A')
-    self.__disconnect('B')
+    self.disconnect('A')
+    self.disconnect('B')
 
   def test_enqueue_simple(self):
-    self.__connect('A')
-    self.__identify('A')
+    self.connect('A')
+    self.identify('A')
     doc = utils.random_dict()
     doc['_src'] = 'A'
     doc['_dst'] = 'B'
+    doc['_que'] = True
     self.__send(doc)
-    self.__disconnect('A')
+    self.disconnect('A')
 
-    self.__connect('B')
-    self.__identify('B')
-    self.__receive(doc)
-    self.__disconnect('B')
+    self.connect('B')
+    self.identify('B')
+    self.receive(doc)
+    self.disconnect('B')
 
   def test_enqueue_many(self):
-    self.__connect('A')
-    self.__identify('A')
+    self.connect('A')
+    self.identify('A')
     seq = map(lambda x: utils.random_dict(), range(0, 10))
     for elem in seq:
       elem['_seq'] = seq.index(elem)
       elem['_src'] = 'A'
       elem['_dst'] = 'B'
+      elem['_que'] = True
       self.__send(elem)
 
-    self.__disconnect('A')
+    self.disconnect('A')
 
-    self.__connect('B')
-    self.__identify('B')
-    self.__receive(seq)
-    self.__disconnect('B')
+    self.connect('B')
+    self.identify('B')
+    self.receive(seq)
+    self.disconnect('B')
 
   def test_enqueue_many_more(self):
     self.test_enqueue_many()
