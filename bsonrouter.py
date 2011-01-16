@@ -124,7 +124,7 @@ class BsonRouterFactory(ServerFactory):
     elif '_que' in doc and doc['_que']:
       self.queue_.enqueue(clientid, doc)
     else:
-      LOG.info('[router] dropped document from %(_src)s to %(_dst)s' % doc)
+      LOG.warning('[router] dropped document from %(_src)s to %(_dst)s' % doc)
 
 
 def setupLogger(level=logging.ERROR):
