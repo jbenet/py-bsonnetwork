@@ -96,7 +96,7 @@ class BsonRouterFactory(ServerFactory):
     self.options = options
 
   def clientid(self):
-    return '$router'
+    return u'$router'
 
   def registerClient(self, clientid, conn):
     if len(self.connections_) > self.options.clients:
