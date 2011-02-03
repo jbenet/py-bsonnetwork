@@ -9,6 +9,8 @@ import optparse
 LINE_FORMAT = r'^\[([^\]]+)\]\[([^\]]+)\] (.+)$'
 LINE_RE = re.compile(LINE_FORMAT)
 
+DAY_DATE_FORMAT = '%Y-%m-%d'
+FULL_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class UserCounters(object):
   OUTPUT_FMT = '%(name)20s \t %(times_connected)3d \t\t%(num_connections)d\t' \
@@ -68,15 +70,15 @@ class UserCounters(object):
 
 class Counters(object):
   OUTPUT_FMT = """
-    ========================= %(identifier)s =========================
-    Unique Users Connected: %(unique_user_connected)s
-    Users Connected: %(user_connected)s
-    Docs Forwarded: %(docs_forwarded)s
-    Docs Dropped: %(docs_dropped)s
-    Logs: %(logLevels)s
+          ========================= %(identifier)s =========================
+          Unique Users Connected: %(unique_user_connected)s
+          Users Connected: %(user_connected)s
+          Docs Forwarded: %(docs_forwarded)s
+          Docs Dropped: %(docs_dropped)s
+          Logs: %(logLevels)s
 
            USERNAME \tCONNECT      FRIENDS \tSENT/RECV \tDROPPED
-       ---------------------------------------------------------
+       ------------------------------------------------------------------------
 """
 
   def __init__(self, identifier):
@@ -131,9 +133,11 @@ class Counters(object):
     return out
 
 class Stats(object):
+  GLOBAL_IDENTIFIER = '_GLOBAL_'
+
   def __init__(self):
     self.counters = {}
-    self.counters['global'] = Counters('_GLOBAL')
+    self.counters[Stats.GLOBAL_IDENTIFIER] = Counters(Stats.GLOBAL_IDENTIFIER)
 
   def log(self, log):
     day = log.day()
@@ -141,7 +145,7 @@ class Stats(object):
       self.counters[day] = Counters(day)
 
     self.counters[day].log(log)
-    self.counters['global'].log(log)
+    self.counters[Stats.GLOBAL_IDENTIFIER].log(log)
 
 
 class LogMessage(object):
@@ -158,12 +162,17 @@ class LogMessage(object):
     return self.date >= date
 
   def day(self):
-    return self.date.strftime('%Y-%m-%d')
+    return self.date.strftime(DAY_DATE_FORMAT)
 
 
-def printStats(stats):
-  for counter in sorted(stats.counters):
-    print str(stats.counters[counter])
+def printStats(stats, opts):
+  if opts.date:
+    print str(stats.counters[opts.date.strftime(DAY_DATE_FORMAT)])
+    print str(stats.counters[Stats.GLOBAL_IDENTIFIER])
+
+  else:
+    for counter in sorted(stats.counters):
+      print str(stats.counters[counter])
 
 
 def parseLog(infile, opts):
@@ -181,8 +190,10 @@ def parseLog(infile, opts):
   return stats
 
 
-DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-def parseDate(datestr, fmt=DATE_FORMAT):
+def parseDate(datestr, fmt=FULL_DATE_FORMAT):
+  if datestr.lower() == 'today':
+    return datetime.datetime.today()
+
   if ',' not in datestr:
     return datetime.datetime.strptime(datestr, fmt)
 
@@ -196,8 +207,9 @@ def parseDate(datestr, fmt=DATE_FORMAT):
 
 def parseArgs():
 
-  usage = '''BsonRouter Log Parser
-  usage: %prog [options]
+  usage = '''usage: %prog [options]
+
+  BsonRouter Log Parser
   '''
 
   parser = optparse.OptionParser(usage)
@@ -209,6 +221,8 @@ def parseArgs():
     default=None, help='parse logs after given date')
   parser.add_option('-u', '--until', dest='until', metavar='DATE',
     default=None, help='parse logs until given date')
+  parser.add_option('-d', '--date', dest='date', metavar='DATE',
+    default=None, help='only report a particular date and global logs')
 
   options, args = parser.parse_args()
 
@@ -220,10 +234,16 @@ def parseArgs():
       print 'Error: filename', options.file, 'is not a file.'
       exit(-1)
 
-  if options.since:
-    options.since = parseDate(options.since, '%Y-%m-%d')
-  if options.until:
-    options.until = parseDate(options.until, '%Y-%m-%d')
+  try:
+    if options.since:
+      options.since = parseDate(options.since, DAY_DATE_FORMAT)
+    if options.until:
+      options.until = parseDate(options.until, DAY_DATE_FORMAT)
+    if options.date:
+      options.date = parseDate(options.date, DAY_DATE_FORMAT)
+  except Exception, e:
+    print 'Error: incorrect date format. Dates must follow: YYYY-MM-DD pattern.'
+    exit(-1)
 
   if options.until and options.since and options.until < options.since:
     print 'Error: since date is later than until date.'
@@ -240,7 +260,7 @@ def main():
   if opts.file:
     readFrom.close()
 
-  printStats(stats)
+  printStats(stats, opts)
 
 if __name__ == '__main__':
   main()
