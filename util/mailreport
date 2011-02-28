@@ -1,0 +1,1 @@
+cat /tmp/bsonrouter-stdout* | /loki/s/bsonrouter/util/logs.py -d today | mutt -s 'Daily Usage Report' stats@espercorp.com
