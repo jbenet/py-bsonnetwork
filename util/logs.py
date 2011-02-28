@@ -13,17 +13,26 @@ DAY_DATE_FORMAT = '%Y-%m-%d'
 FULL_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class UserCounters(object):
-  OUTPUT_FMT = '%(name)20s \t %(times_connected)3d \t\t%(num_connections)d\t' \
-    '%(docs_sent)3d/%(docs_received)3d\t\t' \
-    '%(docs_sent_dropped)3d/%(docs_received_dropped)3d'
+  OUTPUT_FMT = '%(name)20s \t %(times_logged_in)3d \t%(days_logged_in)s ' \
+    '\t%(avg_logins_per_day).2f \t%(avg_unique_logins_per_day).2f ' \
+    '\t%(num_connections)d ' \
+    '\t%(docs_sent)3d/%(docs_received)3d ' \
+    '\t%(docs_sent_dropped)3d/%(docs_received_dropped)3d '
 
   def __init__(self, name):
     self.name = name
+
     self.docs_sent = 0
     self.docs_sent_dropped = 0
     self.docs_received = 0
     self.docs_received_dropped = 0
-    self.times_connected = 0
+
+    self.times_logged_in = 0
+    self.days_logged_in = 0
+    self.avg_logins_per_day = 0
+    self.avg_unique_logins_per_day = 0
+
+    self.daysConnected = []
     self.connections = {}
     self.logLevels = {}
 
@@ -53,7 +62,11 @@ class UserCounters(object):
     self.logLevels[log.level] += 1
 
     if 'client connected:' in log.msg:
-      self.times_connected += 1
+      self.times_logged_in += 1
+      if log.day() not in self.daysConnected:
+        self.days_logged_in += 1
+        self.daysConnected.append(log.day())
+
 
     elif 'forwarding document from' in log.msg:
       from_user, to, to_user = log.msg.split(' ')[-3:]
@@ -63,7 +76,17 @@ class UserCounters(object):
       from_user, to, to_user = log.msg.split(' ')[-3:]
       self.logConnection(from_user, to_user, dropped=True)
 
+  def __avg(self):
+    if len(self.daysConnected) > 0:
+      max_ = parseDate(max(self.daysConnected), DAY_DATE_FORMAT)
+      min_ = parseDate(min(self.daysConnected), DAY_DATE_FORMAT)
+      days = (max_ - min_).days + 1 * 1.00
+      self.avg_logins_per_day = self.times_logged_in / days
+      self.avg_unique_logins_per_day = len(self.daysConnected) / days
+
   def __str__(self):
+    self.__avg()
+
     info = self.__dict__
     info['num_connections'] = len(self.connections)
     return UserCounters.OUTPUT_FMT % info
@@ -77,7 +100,7 @@ class Counters(object):
           Docs Dropped: %(docs_dropped)s
           Logs: %(logLevels)s
 
-           USERNAME \tCONNECT      FRIENDS \tSENT/RECV \tDROPPED
+         USERNAME \tLOGINS \tDAYS \tL/D \tUL/D \tFRIENDS \tSENT/RECV \tDROPPED
        ------------------------------------------------------------------------
 """
 
