@@ -5,7 +5,6 @@ from bsonprotocol import BsonProtocol
 
 class BsonNetworkProtocol(BsonProtocol):
 
-  clientid = None
   logging = None
 
   def log(self, level, message):
