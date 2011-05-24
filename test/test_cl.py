@@ -36,8 +36,8 @@ class TestSimpleCLI(TestSimpleOne):
       doc2 = self.socks[doc['_dst']].recvobj()
       if not utils.dicts_equal(doc, doc2):
         print 'Document mismatch!!'
-        print doc
-        print doc2
+        print doc, docs.index(doc)
+        print doc2, docs.index(doc)
         assert(False)
 
 

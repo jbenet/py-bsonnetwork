@@ -149,7 +149,7 @@ class defaults(object):
   port = 0
   queue = 1000
   secret = None
-  clients = 100
+  clients = 10000
   logging = 'error'
   verbose = False
 
