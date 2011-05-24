@@ -18,7 +18,7 @@ class TestSimpleOne:
 
     self.socks = {}
 
-    cmd = './bsonrouter.py -p %d -l debug' % self.port
+    cmd = 'twisted/bsonrouter.py -p %d -l debug' % self.port
     self.router = Popen(cmd, shell=True, stderr=PIPE)
     self.waitForOutput('Starting BsonNetwork Router')
 

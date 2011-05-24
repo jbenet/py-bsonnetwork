@@ -4,13 +4,10 @@ bson gevent bson network
 '''
 
 import logging
-from bsonprotocol import BsonProtocol, BsonFactory
+from bsonprotocol import BsonProtocol
+from bsonprotocol import BsonFactory
 
 class BsonNetworkProtocol(BsonProtocol):
-
-  # def __init__(self, *args):
-  #   super(BsonNetworkProtocol, self).__init__(*args)
-  #   self.clientid = None
 
   def log(self, level, message):
     if not self.factory.logging or not hasattr(self.factory.logging, level):

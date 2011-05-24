@@ -50,7 +50,7 @@ class BsonProtocol(Protocol, _PauseableMixin):
     '''
     self.transport.loseConnection()
 
-  def bsonReceived(self, msg):
+  def receivedBson(self, msg):
     ''' For Subclasses to implement. '''
     raise NotImplementedError
 
@@ -99,4 +99,4 @@ class BsonProtocol(Protocol, _PauseableMixin):
         # Note: at this point, we may be off sync (warranting disconnect)
         #       but let's attempt to keep going!
       else:
-        self.bsonReceived(bsonDoc)
+        self.receivedBson(bsonDoc)

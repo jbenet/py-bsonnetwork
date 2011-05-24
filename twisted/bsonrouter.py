@@ -71,14 +71,14 @@ class BsonRouterQueue(object):
 
 class BsonRouterProtocol(BsonNetworkProtocol):
 
-  def messageReceived(self, msg):
+  def receivedMessage(self, msg):
     self.log('error', 'router received message addressed to it.')
 
-  def controlMessageReceived(self, msg):
-    BsonNetworkProtocol.controlMessageReceived(self, msg)
+  def receivedControlMessage(self, msg):
+    BsonNetworkProtocol.receivedControlMessage(self, msg)
     self.factory.registerClient(self.clientid, self)
 
-  def forwardMessageReceived(self, msg):
+  def receivedForwardMessage(self, msg):
     self.factory.forward(msg)
 
   def close(self):
@@ -89,14 +89,12 @@ class BsonRouterFactory(ServerFactory):
 
   protocol = BsonRouterProtocol
 
-  def __init__(self, options):
+  def __init__(self, clientid='$router', options=None):
     self.protocol.logging = LOG
     self.connections_ = {}
     self.queue_ = BsonRouterQueue(options.queue)
     self.options = options
-
-  def clientid(self):
-    return u'$router'
+    self.clientid = clientid
 
   def registerClient(self, clientid, conn):
     if len(self.connections_) > self.options.clients:
@@ -205,7 +203,8 @@ def main():
   options, args = parseArgs()
 
   setupLogger(options.logging)
-  factory = BsonRouterFactory(options)
+  factory = BsonRouterFactory('$router', options)
+  factory.logging = LOG
 
   from twisted.internet import reactor
 

@@ -90,10 +90,17 @@ class TestSimpleStress(TestSimpleCLI):
 
 if __name__ == '__main__':
 
+  import sys
+  queue = '--no-queue' not in sys.argv
+
   d = TestSimpleOne.__dict__.copy()
   d.update(TestSimpleStress.__dict__)
   for member in d:
     if member.startswith('test_'):
+      if not queue and 'queue' in member:
+        print '----------------- SKIPPED %s -----------------' % member
+        continue
+
       print '----------------- TESTING %s -----------------' % member
       t = TestSimpleStress()
       t.prefix = sys.argv[-1]

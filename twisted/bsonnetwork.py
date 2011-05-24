@@ -5,15 +5,12 @@ from bsonprotocol import BsonProtocol
 
 class BsonNetworkProtocol(BsonProtocol):
 
-  logging = None
-
   def log(self, level, message):
-    if not self.logging:
+    if not self.factory.logging or not hasattr(self.factory.logging, level):
       return
 
-    logfn = getattr(self.logging, level)
-    if logfn:
-      logfn('[BN] [%s] %s' % (self.clientid, message))
+    logfn = getattr(self.factory.logging, level)
+    logfn('[BN] [%s] %s' % (self.clientid, message))
 
   def connectionMade(self):
     self.clientid = None
@@ -21,7 +18,7 @@ class BsonNetworkProtocol(BsonProtocol):
 
     # send identification message
     self.log('debug', 'sending identification message')
-    self.sendBson({'_src' : self.factory.clientid()})
+    self.sendBson({'_src' : self.factory.clientid})
 
   def connectionLost(self, reason):
     self.close()
@@ -30,20 +27,20 @@ class BsonNetworkProtocol(BsonProtocol):
     self.log('info', 'connection closed')
     self.transport.loseConnection()
 
-  def messageReceived(self, msg):
+  def receivedMessage(self, msg):
     '''Override this to handle a packet addressed to this service.'''
     raise NotImplementedError
 
-  def controlMessageReceived(self, msg):
+  def receivedControlMessage(self, msg):
     '''Identify sender by default.'''
     self.clientid = msg['_src']
     self.log('debug', 'connection identified')
 
-  def forwardMessageReceived(self, msg):
+  def receivedForwardMessage(self, msg):
     '''Drop bson docs not for us by default.'''
     pass
 
-  def bsonReceived(self, doc):
+  def receivedBson(self, doc):
     self.log('debug', 'bson document received')
     if not self.validMessage(doc):
       self.log('debug', 'data discarded (invalid document)')
@@ -52,14 +49,14 @@ class BsonNetworkProtocol(BsonProtocol):
     self.log('debug', 'document parsed %s' % str(doc))
     if '_dst' not in doc:
       self.log('debug', 'handling identification message')
-      self.controlMessageReceived(doc)
+      self.receivedControlMessage(doc)
       return
 
-    if doc['_dst'] != self.factory.clientid():
-      self.forwardMessageReceived(doc)
+    if doc['_dst'] != self.factory.clientid:
+      self.receivedForwardMessage(doc)
       return
 
-    self.messageReceived(doc)
+    self.receivedMessage(doc)
 
   def forwardMessage(self, doc):
     self.log('debug', 'sending document %s' % str(doc))
@@ -70,7 +67,7 @@ class BsonNetworkProtocol(BsonProtocol):
 
   def sendMessage(self, doc, src=None, dst=None):
     if '_src' not in doc or src:
-      doc['_src'] = src or self.factory.clientid()
+      doc['_src'] = src or self.factory.clientid
     if '_dst' not in doc or dst:
       doc['_dst'] = dst or self.clientid
     self.forwardMessage(doc)
@@ -88,14 +85,15 @@ class BsonNetworkProtocol(BsonProtocol):
     #   self.log('error', invalid % 'source id mismatch (%s)' % doc['_src'])
     #   return False
 
-    if not self.factory.options.secret:
+    opts = self.factory.options
+    if not opts or not hasattr(opts, 'secret') or not opts.secret:
       return True
 
     if '_sec' not in doc:
       self.log('error', invalid % 'no secret')
       return False
 
-    if doc['_sec'] != self.factory.options.secret:
+    if doc['_sec'] != opts.secret:
       self.log('error', invalid % 'secret mismatch (%s)' % doc['_sec'])
       return False
 

@@ -43,9 +43,17 @@ class TestSimpleCLI(TestSimpleOne):
 
 if __name__ == '__main__':
 
+  import sys
+  queue = '--no-queue' not in sys.argv
+
   for member in TestSimpleOne.__dict__:
     if member.startswith('test_'):
+      if not queue and 'queue' in member:
+        print '----------------- SKIPPED %s -----------------' % member
+        continue
+
       print '----------------- TESTING %s -----------------' % member
+
       t = TestSimpleCLI()
       t.setup()
       getattr(TestSimpleCLI, member)(t)
