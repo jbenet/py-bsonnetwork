@@ -128,25 +128,31 @@ class BsonNetworkEchoProtocol(BsonNetworkProtocol):
 
 
 if __name__ == '__main__':
+  import sys
   import logging
+
+  loglevel = logging.DEBUG if '-v' in sys.argv else logging.WARNING
   fmt='[%(asctime)s][%(levelname)8s] %(message)s'
-  logging.basicConfig(level=logging.DEBUG, format=fmt)
+  logging.basicConfig(level=loglevel, format=fmt)
 
   factory = BsonNetworkFactory()
   factory.logging = logging
   factory.clientid = 'echoer'
   factory.protocol = BsonNetworkEchoProtocol
 
+  import random
+  port = random.randint(10000, 65000)
+
   from gevent import socket
   from gevent.server import StreamServer
-  server = StreamServer(('', 6000), factory.serverHandler)
+  server = StreamServer(('', port), factory.serverHandler)
 
-  print 'Starting bson network server on port 6000'
+  print 'Starting bson network server on port', port
   server.start()
 
   def sendMessages(number):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(('localhost', 6000))
+    s.connect(('localhost', port))
 
     def send(message):
       message['_src'] = 'client_%d' % number
