@@ -6,8 +6,15 @@ import bson
 import struct
 
 from twisted.internet.protocol import Protocol
-from twisted.protocols.basic import StringTooLongError
 from twisted.protocols.basic import _PauseableMixin
+
+
+class BsonError(Exception):
+  pass
+
+class LengthExceededError(BsonError):
+  pass
+
 
 class BsonProtocol(Protocol, _PauseableMixin):
   '''
@@ -61,14 +68,14 @@ class BsonProtocol(Protocol, _PauseableMixin):
     '''
     if len(bsonData) >= self.max_bytes:
       errorStr = 'Trying to send %d bytes whereas maximum is %d'
-      raise StringTooLongError(errorStr % (len(bsonData), self.max_bytes))
+      raise LengthExceededError(errorStr % (len(bsonData), self.max_bytes))
     self.transport.write(bsonData)
 
   def sendBson(self, bsonDoc):
     '''
     Send a bson document to the other end of the connection.
 
-    @type data: C{str}
+    @type bsonDoc: {dict}
     '''
     self.sendBsonData(bson.dumps(bsonDoc)) # let exceptions propagate up
 
