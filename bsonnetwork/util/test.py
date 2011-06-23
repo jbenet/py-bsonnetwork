@@ -108,7 +108,7 @@ class BsonNetworkProcess(object):
         clientid = 'server'
       cmd.append('-i')
       cmd.append(clientid)
-    self.proc_clientid = clientid
+    self.proc_clientid = cmd[cmd.index('-i') + 1]
 
     self.cmd = ' '.join(cmd)
 
@@ -177,11 +177,12 @@ class BsonNetworkProcess(object):
 
   def _recvobj(self, clientid, doc):
     '''Receives bson document `doc` via socket `clientid`.'''
-    return self.socks[clientid].recv(len(bson.dumps(doc)))
+    return bson.loads(self.socks[clientid].recv(len(bson.dumps(doc))))
 
 
   def send(self, docs):
     '''Sends a collection of bson docs (with _src and _dst)'''
+    print 'SENDING', docs
     if not isinstance(docs, list):
       docs = [docs]
 
@@ -198,9 +199,9 @@ class BsonNetworkProcess(object):
       while printall:
         print self.proc.stdout.readline().strip()
 
-      doc2 = self.socks[doc['_dst']].recv(len(doc))
+      doc2 = self._recvobj(doc['_dst'], doc)
       if not dicts_equal(doc, doc2):
-        raise DocumentMismatchError('Document mismatch:\n%s\n%s' % doc, doc2)
+        raise DocumentMismatchError('Document mismatch:\n%s\n%s' % (doc, doc2))
 
   def send_and_receive(self, src, dst, docs):
     '''Sends and Receives a collection of bson docs (with _src and _dst)'''
