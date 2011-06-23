@@ -121,6 +121,7 @@ if __name__ == '__main__':
   import util
   import logging
   from echo import BsonEchoProtocol
+  from util.test import testFactory
 
   parser = util.arg_parser('usage: %prog [options]', logging=logging.WARNING)
   options, args = parser.parse_args()
@@ -135,6 +136,6 @@ if __name__ == '__main__':
   data = bson.dumps(data)
   data = [data for i in range(0, 100)]
 
-  util.test.testFactory(factory, data)
+  testFactory(factory, data)
 
 

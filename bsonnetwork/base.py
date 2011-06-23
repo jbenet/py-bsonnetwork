@@ -112,6 +112,7 @@ if __name__ == '__main__':
 
   import util
   import logging
+  from util.test import testFactory
   from echo import EchoProtocol
 
   parser = util.arg_parser('usage: %prog [options]', logging=logging.WARNING)
@@ -125,6 +126,6 @@ if __name__ == '__main__':
 
   data = 'TestMessageFEWFSDVFSDR@#R#$@$#@%$Y^U&*&(^%$#@^&IRUYHTGSFDAFVD)'
   data = [data for i in range(0, 100)]
-  util.test.testFactory(factory, data)
+  testFactory(factory, data)
 
 

@@ -129,6 +129,7 @@ def test():
   import bson
   import logging
 
+  from util.test import testFactory
   from echo import BsonNetworkEchoProtocol, flipMessage
 
   parser = util.arg_parser('usage: %prog [options]', logging=logging.WARNING)
@@ -152,7 +153,7 @@ def test():
   for i in range(0, len(send)):
     data.append((bson.dumps(send[i]), bson.dumps(recv[i])))
 
-  util.test.testFactory(factory, data)
+  testFactory(factory, data)
 
 
 if __name__ == '__main__':
