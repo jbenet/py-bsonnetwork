@@ -1,207 +1,149 @@
-import os
-import sys
-import bson
-import utils
-import socket
-import random
 
-from utils import BsonSocket
+import unittest
+import utils
+
+from bsonnetwork.echo import flipMessage
+from bsonnetwork.util.test import BsonNetworkProcess
+
 
 from subprocess import Popen, PIPE
 from nose.tools import *
 
-class TestSimpleOne:
 
-  def setup(self):
-    self.port = random.randint(10000, 20000)
-    bson.patch_socket()
 
-    self.socks = {}
-
-    cmd = 'bsonnetwork/bsonrouter.py -p %d -l debug' % self.port
-    self.router = Popen(cmd, shell=True, stderr=PIPE)
-    self.waitForOutput('Starting BsonNetwork Router')
-
-  def teardown(self):
-    self.router.kill()
-
-  def waitForOutput(self, output):
-    print '===> Waiting for: %s' % output
-    while True:
-      line = self.router.stderr.readline()
-      print line.strip()
-      if output in line:
-        return
-
-  def connect(self, clientid):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('', self.port))
-    self.socks[clientid] = sock
-    self.waitForOutput('connection made')
-    self.waitForOutput('sending identification message')
-    self.socks[clientid].recvobj()
-    return sock
-
-  def disconnect(self, clientid):
-    sock = self.socks[clientid]
-    sock.close()
-    del self.socks[clientid]
-    self.waitForOutput('connection closed')
-
-  def identify(self, clientid):
-    self.socks[clientid].sendobj( { '_src' : clientid } )
-    self.waitForOutput('client connected: %s' % clientid)
-
-  def __send(self, doc):
-    self.socks[doc['_src']].sendobj(doc)
-
-  def receive(self, docs, printall=False):
-    if not isinstance(docs, list):
-      docs = [docs]
-
-    for doc in docs:
-      self.waitForOutput('[%(_dst)s] sending document' % doc)
-      while printall:
-        print self.router.stderr.readline().strip()
-
-      doc2 = self.socks[doc['_dst']].recvobj()
-      if not utils.dicts_equal(doc, doc2):
-        print 'Document mismatch!!'
-        print doc
-        print doc2
-        assert(False)
-
-  def __send_and_receive(self, src, dst, doc):
-    doc['_src'] = src
-    doc['_dst'] = dst
-    self.__send(doc)
-    self.receive(doc)
+class TestRouter(unittest.TestCase):
 
   def test_connect(self):
-    self.connect('A')
-    self.disconnect('A')
-
-  def test_identify(self):
-    self.connect('A')
-    self.identify('A')
-    self.disconnect('A')
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      r.connect('A')
+      r.identify('A')
+      r.disconnect('A')
 
   def test_connect_two(self):
-    self.connect('A')
-    self.connect('B')
-    self.disconnect('A')
-    self.disconnect('B')
-
-  def test_identify_two(self):
-    self.connect('A')
-    self.connect('B')
-    self.identify('B')
-    self.identify('A')
-    self.disconnect('A')
-    self.disconnect('B')
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      r.connect('A')
+      r.connect('B')
+      r.identify('A')
+      r.identify('B')
+      r.disconnect('A')
+      r.disconnect('B')
 
   def test_send_self(self):
-    self.connect('A')
-    self.identify('A')
-
-    self.__send_and_receive('A', 'A', {'herp' : 'derp'})
-
-    self.disconnect('A')
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      r.connect('A')
+      r.identify('A')
+      r.send_and_receive('A', 'A', {'herp' : 'derp'})
+      r.disconnect('A')
 
   def test_send_simple(self):
-    self.connect('A')
-    self.connect('B')
-    self.identify('B')
-    self.identify('A')
-
-    self.__send_and_receive('A', 'B', {'herp' : 'derp'})
-
-    self.disconnect('A')
-    self.disconnect('B')
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      r.connect('A')
+      r.connect('B')
+      r.identify('A')
+      r.identify('B')
+      r.send_and_receive('A', 'B', {'herp' : 'derp'})
+      r.disconnect('A')
+      r.disconnect('B')
 
   def test_send_more(self):
-    self.connect('A')
-    self.connect('B')
-    self.identify('B')
-    self.identify('A')
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      r.connect('A')
+      r.connect('B')
+      r.identify('A')
+      r.identify('B')
 
-    seq = map(lambda x: utils.random_dict(), range(0, 10))
-    for elem in seq:
-      elem['_seq'] = seq.index(elem)
-      elem['_src'] = 'A'
-      elem['_dst'] = 'B'
-      self.__send(elem)
-    self.receive(seq)
+      seq = [utils.random_dict() for i in range(0, 10)]
+      r.send_and_receive('A', 'B', seq)
+      r.send_and_receive('B', 'A', seq)
 
-    self.disconnect('A')
-    self.disconnect('B')
+      r.disconnect('A')
+      r.disconnect('B')
+
 
   def test_send_much(self):
-    self.connect('A')
-    self.connect('B')
-    self.identify('B')
-    self.identify('A')
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      r.connect('A')
+      r.connect('B')
+      r.identify('A')
+      r.identify('B')
 
-    for pair in [('A', 'B'), ('B', 'A'), ('A', 'A'), ('B', 'B')]:
-      seq = map(lambda x: utils.random_dict(), range(0, 10))
-      for elem in seq:
-        elem['_seq'] = seq.index(elem)
-        elem['_src'] = pair[0]
-        elem['_dst'] = pair[1]
-        self.__send(elem)
-      self.receive(seq)
+      for pair in [('A', 'B'), ('B', 'A'), ('A', 'A'), ('B', 'B')]:
+        seq = [utils.random_dict() for i in range(0, 50)]
+        r.send_and_receive(pair[0], pair[1], seq)
+        r.send_and_receive(pair[0], pair[1], seq)
+        r.send_and_receive(pair[0], pair[1], seq)
+        r.send_and_receive(pair[0], pair[1], seq)
 
-    self.disconnect('A')
-    self.disconnect('B')
+      r.disconnect('A')
+      r.disconnect('B')
 
-  def test_enqueue_simple(self):
-    self.connect('A')
-    self.identify('A')
-    doc = utils.random_dict()
-    doc['_src'] = 'A'
-    doc['_dst'] = 'B'
-    doc['_que'] = True
-    self.__send(doc)
-    self.disconnect('A')
 
-    self.connect('B')
-    self.identify('B')
-    self.receive(doc)
-    self.disconnect('B')
+def clientid(num):
+  return 'client%d' % int(num)
 
-  def test_enqueue_many(self):
-    self.connect('A')
-    self.identify('A')
-    seq = map(lambda x: utils.random_dict(), range(0, 10))
-    for elem in seq:
-      elem['_seq'] = seq.index(elem)
-      elem['_src'] = 'A'
-      elem['_dst'] = 'B'
-      elem['_que'] = True
-      self.__send(elem)
+class TestRouterStress(unittest.TestCase):
 
-    self.disconnect('A')
+  NUM_CLIENTS = 1000
+  NUM_MESSAGES = 10
 
-    self.connect('B')
-    self.identify('B')
-    self.receive(seq)
-    self.disconnect('B')
+  clients = [clientid(c) for c in range(0, NUM_CLIENTS)]
 
-  def test_enqueue_many_more(self):
-    self.test_enqueue_many()
-    self.test_enqueue_many()
-    self.test_enqueue_many()
-    self.test_enqueue_many()
+  def test_connect(self):
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      for client in self.clients:
+        r.connect(client)
+      for client in self.clients:
+        r.identify(client)
+      for client in self.clients:
+        r.disconnect(client)
 
+  def test_send_self(self):
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      for client in self.clients:
+        r.connect(client)
+      for client in self.clients:
+        r.identify(client)
+      for client in self.clients:
+        r.send_and_receive(client, client, {'herp' : 'derp'})
+      for client in self.clients:
+        r.disconnect(client)
+
+  def test_send_simple(self):
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      for client in self.clients:
+        r.connect(client)
+      for client in self.clients:
+        r.identify(client)
+      for c in range(0, self.NUM_CLIENTS - 1):
+        r.send_and_receive(clientid(c), clientid(c + 1), {'herp' : 'derp'})
+      for client in self.clients:
+        r.disconnect(client)
+
+  def test_send_more(self):
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      for client in self.clients:
+        r.connect(client)
+      for client in self.clients:
+        r.identify(client)
+      msg = utils.random_dict()
+      for c in range(0, self.NUM_CLIENTS - 1):
+        r.send_and_receive(clientid(c), clientid(c + 1), msg)
+      for client in self.clients:
+        r.disconnect(client)
+
+  def test_send_much(self):
+    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
+      for client in self.clients:
+        r.connect(client)
+      for client in self.clients:
+        r.identify(client)
+      for i in range(0, self.NUM_MESSAGES):
+        msg = utils.random_dict()
+        for c in range(0, self.NUM_CLIENTS - 1):
+          r.send_and_receive(clientid(c), clientid(c + 1), msg)
+      for client in self.clients:
+        r.disconnect(client)
 
 
 if __name__ == '__main__':
-
-  for member in TestSimpleOne.__dict__:
-    if member.startswith('test_'):
-      print '----------------- TESTING %s -----------------' % member
-      t = TestSimpleOne()
-      t.setup()
-      getattr(TestSimpleOne, member)(t)
-      t.teardown()
-
+  unittest.main()

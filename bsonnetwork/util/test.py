@@ -131,6 +131,7 @@ class BsonNetworkProcess(object):
     self.proc.kill()
 
     for line in self.proc.stdout.readlines():
+      line = line.strip()
       if len(line) > 1:
         print line
 
@@ -213,7 +214,6 @@ class BsonNetworkProcess(object):
       doc['_dst'] = dst
       self.send(doc)
       self.receive(doc)
-
 
   def connect(self, clientid):
     '''Connects a socket with `clientid` to the process server.'''
