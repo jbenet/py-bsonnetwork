@@ -2,14 +2,7 @@
 import unittest
 import utils
 
-from bsonnetwork.echo import flipMessage
 from bsonnetwork.util.test import BsonNetworkProcess
-
-
-from subprocess import Popen, PIPE
-from nose.tools import *
-
-
 
 class TestRouter(unittest.TestCase):
 
@@ -80,69 +73,6 @@ class TestRouter(unittest.TestCase):
 
 def clientid(num):
   return 'client%d' % int(num)
-
-class TestRouterStress(unittest.TestCase):
-
-  NUM_CLIENTS = 1000
-  NUM_MESSAGES = 10
-
-  clients = [clientid(c) for c in range(0, NUM_CLIENTS)]
-
-  def test_connect(self):
-    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
-      for client in self.clients:
-        r.connect(client)
-      for client in self.clients:
-        r.identify(client)
-      for client in self.clients:
-        r.disconnect(client)
-
-  def test_send_self(self):
-    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
-      for client in self.clients:
-        r.connect(client)
-      for client in self.clients:
-        r.identify(client)
-      for client in self.clients:
-        r.send_and_receive(client, client, {'herp' : 'derp'})
-      for client in self.clients:
-        r.disconnect(client)
-
-  def test_send_simple(self):
-    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
-      for client in self.clients:
-        r.connect(client)
-      for client in self.clients:
-        r.identify(client)
-      for c in range(0, self.NUM_CLIENTS - 1):
-        r.send_and_receive(clientid(c), clientid(c + 1), {'herp' : 'derp'})
-      for client in self.clients:
-        r.disconnect(client)
-
-  def test_send_more(self):
-    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
-      for client in self.clients:
-        r.connect(client)
-      for client in self.clients:
-        r.identify(client)
-      msg = utils.random_dict()
-      for c in range(0, self.NUM_CLIENTS - 1):
-        r.send_and_receive(clientid(c), clientid(c + 1), msg)
-      for client in self.clients:
-        r.disconnect(client)
-
-  def test_send_much(self):
-    with BsonNetworkProcess('python bsonnetwork/router.py -i router') as r:
-      for client in self.clients:
-        r.connect(client)
-      for client in self.clients:
-        r.identify(client)
-      for i in range(0, self.NUM_MESSAGES):
-        msg = utils.random_dict()
-        for c in range(0, self.NUM_CLIENTS - 1):
-          r.send_and_receive(clientid(c), clientid(c + 1), msg)
-      for client in self.clients:
-        r.disconnect(client)
 
 
 if __name__ == '__main__':

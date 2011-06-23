@@ -6,9 +6,6 @@ import socket
 from bsonnetwork.util import test
 from bsonnetwork.util import BsonReceiveBuffer
 
-from subprocess import Popen, PIPE
-from nose.tools import *
-
 import utils
 
 class TestUtil(unittest.TestCase):

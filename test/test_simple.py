@@ -5,10 +5,6 @@ import utils
 from bsonnetwork.echo import flipMessage
 from bsonnetwork.util.test import BsonNetworkProcess
 
-
-from subprocess import Popen, PIPE
-from nose.tools import *
-
 class TestConnect(unittest.TestCase):
 
   def test_simple(self):
