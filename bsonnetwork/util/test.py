@@ -1,10 +1,15 @@
+
 import bson
-import util
 import time
 import socket
 import signal
+import gevent
+import process
 
 from subprocess import Popen, PIPE, STDOUT
+
+from base import Factory, Server
+
 
 
 class DocumentMismatchError(Exception):
@@ -30,6 +35,57 @@ def dicts_equal(doc, doc2):
 
 
 
+def testSendData(dataSet, port):
+  '''Test sending message `dataSet` to a server listening on `port`'''
+
+  if not isinstance(dataSet, list):
+    dataSet = [dataSet]
+
+  s = gevent.socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  s.connect(('localhost', port))
+
+  for data in dataSet:
+    if not isinstance(data, tuple):
+      data = (data, data)
+
+    s.send(data[0])
+    gevent.sleep(0.001)
+    if s.recv(len(data[1])) != data[1]:
+      s.close()
+      return False
+
+  s.close()
+  gevent.sleep(0.001)
+  return True
+
+
+
+
+def testFactory(factory, data, clients=100):
+  '''Tests the given factory with the given data packets.'''
+
+  port = randomPort()
+
+  print 'Starting', factory, 'with', factory.protocol, 'on port', port
+  server = Server(('', port), factory)
+  server.serve()
+
+  jobs = []
+  for c in range(0, clients):
+    jobs.append(gevent.spawn(testSendData, data, port))
+
+  gevent.joinall(jobs, timeout=15)
+  vals = [(1 if job.value else 0) for job in jobs]
+  print sum(vals), '/', len(vals), 'succeeded'
+
+  return sum(vals) * 1.0 / len(vals)
+
+
+
+
+
+
+
 
 class BsonNetworkProcess(object):
   '''Utility class in order to test BsoNetwork processes.'''
@@ -45,7 +101,7 @@ class BsonNetworkProcess(object):
 
     if '-p' not in cmd:
       if port is None:
-        port = util.randomPort()
+        port = process.randomPort()
       cmd.append('-p')
       cmd.append(str(port))
     self.port = int(cmd[cmd.index('-p') + 1])

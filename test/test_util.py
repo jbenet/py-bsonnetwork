@@ -4,7 +4,7 @@ import unittest
 import socket
 
 from bsonnetwork.util import test
-from bsonnetwork.util.bsonbuffer import BsonReceiveBuffer
+from bsonnetwork.util import BsonReceiveBuffer
 
 from subprocess import Popen, PIPE
 from nose.tools import *
