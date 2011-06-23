@@ -2,7 +2,7 @@
 
 import logging
 
-from bsonnetwork import BsonNetworkProtocol, BsonNetworkFactory
+from network import BsonNetworkProtocol, BsonNetworkFactory
 
 __version__ = '0.3.0'
 

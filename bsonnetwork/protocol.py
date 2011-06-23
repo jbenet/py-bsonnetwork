@@ -135,6 +135,6 @@ if __name__ == '__main__':
   data = bson.dumps(data)
   data = [data for i in range(0, 100)]
 
-  util.testFactory(factory, data)
+  util.test.testFactory(factory, data)
 
 

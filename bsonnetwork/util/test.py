@@ -8,10 +8,6 @@ import process
 
 from subprocess import Popen, PIPE, STDOUT
 
-from base import Factory, Server
-
-
-
 class DocumentMismatchError(Exception):
   pass
 
@@ -61,10 +57,13 @@ def testSendData(dataSet, port):
 
 
 
+
 def testFactory(factory, data, clients=100):
   '''Tests the given factory with the given data packets.'''
 
-  port = randomPort()
+  from base import Server
+
+  port = process.randomPort()
 
   print 'Starting', factory, 'with', factory.protocol, 'on port', port
   server = Server(('', port), factory)
@@ -79,8 +78,6 @@ def testFactory(factory, data, clients=100):
   print sum(vals), '/', len(vals), 'succeeded'
 
   return sum(vals) * 1.0 / len(vals)
-
-
 
 
 
@@ -132,7 +129,10 @@ class BsonNetworkProcess(object):
     del self.socks
 
     self.proc.kill()
-    print self.proc.stdout.read()
+
+    for line in self.proc.stdout.readlines():
+      if len(line) > 1:
+        print line
 
     del self.proc
 

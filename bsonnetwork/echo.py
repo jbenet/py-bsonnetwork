@@ -5,7 +5,7 @@ import logging
 
 from base import Protocol
 from protocol import BsonProtocol
-from bsonnetwork import BsonNetworkFactory, BsonNetworkProtocol
+from network import BsonNetworkFactory, BsonNetworkProtocol
 
 
 __version__ = '1.1'

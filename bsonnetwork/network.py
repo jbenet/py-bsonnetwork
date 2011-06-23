@@ -10,6 +10,7 @@ import logging
 from protocol import BsonProtocol, BsonFactory
 
 class BsonNetworkProtocol(BsonProtocol):
+  '''BsonNetwork Protocol'''
 
   def log(self, level, message):
     if not self.factory.logging or not hasattr(self.factory.logging, level):
@@ -151,7 +152,7 @@ def test():
   for i in range(0, len(send)):
     data.append((bson.dumps(send[i]), bson.dumps(recv[i])))
 
-  util.testFactory(factory, data)
+  util.test.testFactory(factory, data)
 
 
 if __name__ == '__main__':
