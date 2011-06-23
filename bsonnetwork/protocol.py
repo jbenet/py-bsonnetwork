@@ -113,21 +113,6 @@ class BsonFactory(Factory):
   protocol = BsonProtocol
 
 
-  # def transportReceive(self, connection):
-  #   while True:
-  #     message = None
-  #     try:
-  #       message = connection.transport.sock.recvobj()
-  #     except Exception, e:
-  #       connection.bsonDecodingError(e)
-  #       # Note: at this point, we may be off sync (warranting disconnect)
-  #       #       but let's attempt to keep going!
-  #     if not message:
-  #       break
-  #     connection.receivedBson(message)
-
-
-
 
 
 if __name__ == '__main__':

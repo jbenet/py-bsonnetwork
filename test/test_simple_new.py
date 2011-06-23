@@ -1,7 +1,7 @@
 
 import unittest
 
-from bsonnetwork.test import BsonNetworkProcess
+from bsonnetwork.util.test import BsonNetworkProcess
 
 from subprocess import Popen, PIPE
 from nose.tools import *

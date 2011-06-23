@@ -1,16 +1,19 @@
 
-
+import bson
 import util
 import random
+import logging
+
 import optparse
 from optparse import OptionValueError
 
-import logging
+import gevent
+from gevent import socket
 
 from base import Factory, Server
 
-import gevent
-from gevent import socket
+
+
 
 
 def testSendData(dataSet, port):
