@@ -90,6 +90,7 @@ class BsonNetworkProcess(object):
   def __init__(self, cmd, **kwargs):
     '''Initialize with the given command and arguments.'''
     self._parse_arguments(cmd, **kwargs)
+    self.proc = None
 
   def _parse_arguments(self, cmd, port=None, clientid=None, **kwargs):
     '''Parse all the arguments and add them to the command.'''
@@ -108,7 +109,7 @@ class BsonNetworkProcess(object):
         clientid = 'server'
       cmd.append('-i')
       cmd.append(clientid)
-    self.proc_clientid = cmd[cmd.index('-i') + 1]
+    self.clientid = cmd[cmd.index('-i') + 1]
 
     self.cmd = ' '.join(cmd)
 
@@ -135,8 +136,11 @@ class BsonNetworkProcess(object):
       if len(line) > 1:
         print line
 
-    del self.proc
+    self.proc = None
 
+  def __del__(self):
+    if hasattr(self, 'proc') and self.proc:
+      self.stop()
 
   def __enter__(self):
     '''This object can be used in a with clause. starts the process.'''
@@ -166,8 +170,9 @@ class BsonNetworkProcess(object):
       while output not in line:
         if len(line) > 1:
           self._output_buffer.append(line)
-        line = self.proc.stdout.readline()
-        print line.strip()
+        line = self.proc.stdout.readline().strip()
+        if len(line) > 1:
+          print line
     except Alarm:
       raise OutputTimeout('Timed out waiting for output: %s' % output)
 
@@ -215,28 +220,31 @@ class BsonNetworkProcess(object):
       self.send(doc)
       self.receive(doc)
 
-  def connect(self, clientid):
+  def connect(self, clientid, trigger=True):
     '''Connects a socket with `clientid` to the process server.'''
-    print '=====> Connecting', clientid, 'to', self.port
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('', self.port))
-    self.socks[clientid] = sock
+    sock = None
+    if trigger:
+      print '=====> Connecting', clientid, 'to', self.port
+      sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      sock.connect(('', self.port))
+      self.socks[clientid] = sock
     self.waitForOutput('connection made')
     return sock
 
-  def disconnect(self, clientid):
+  def disconnect(self, clientid, trigger=True):
     '''Disconnects the socket with `clientid` from the process server.'''
-    sock = self.socks[clientid]
-    sock.close()
-    del self.socks[clientid]
+    if trigger:
+      sock = self.socks[clientid]
+      sock.close()
+      del self.socks[clientid]
     self.waitForOutput('[%s] connection closed' % clientid)
 
-  def identify(self, clientid):
+  def identify(self, clientid, trigger=True):
     '''Identifies the socket with `clientid` with the process server.'''
     self.waitForOutput('sending identification message')
-    self._recvobj(clientid, { '_src' : self.proc_clientid } )
-    self._sendobj(clientid, { '_src' : clientid } )
+    if trigger:
+      self._recvobj(clientid, { '_src' : self.clientid } )
+      self._sendobj(clientid, { '_src' : clientid } )
     self.waitForOutput('[%s] connection identified' % clientid)
-
 
 

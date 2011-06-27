@@ -84,10 +84,9 @@ def parseArgs():
 
 
 def main():
-
   options, args = parseArgs()
 
-  fmt='[%(asctime)s][%(levelname)8s] %(message)s'
+  fmt='[%(asctime)s][%(levelname)8s][' + options.clientid + '] %(message)s'
   logging.basicConfig(level=options.logging, format=fmt)
 
   logging.info('options: %s' % options)
@@ -97,6 +96,12 @@ def main():
   factory = BsonRouterFactory(options.clientid, options)
   factory.logging = logging
 
+  if options.connect_to:
+    logging.info('Starting clients')
+    from base import Client
+    clients = [Client.spawn(factory, addr) for addr in options.connect_to]
+
+  logging.info('Starting server')
   from base import Server
   server = Server(('', options.port), factory)
   server.serve_forever()

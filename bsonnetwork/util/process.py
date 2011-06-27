@@ -52,6 +52,22 @@ def store_loglevel(option, ops, value, parser):
 
 
 
+def store_hostlist(option, ops, value, parser):
+  '''optparse store callback that validates a host list'''
+
+  def addressFromString(string):
+    address = string.split(':')
+    return (address[0], int(address[1]))
+  hostlist = map(addressFromString, value.split(','))
+
+  for addr in hostlist:
+    if addr[1] > 65535 or addr[1] < 1:
+      raise OptionValueError('hostlist address %s:%d port out of range' % addr)
+
+  setattr(parser.values, option.dest, hostlist)
+
+
+
 def arg_parser(usage, **defaults):
   '''Returns an argument parser with common bsonnetwork arguments.'''
 
@@ -70,7 +86,7 @@ def arg_parser(usage, **defaults):
   parser.add_option('-p', '--port',  dest='port',  metavar='PORT', type='int',
     action='callback', callback=store_int_range(1024, 65535),
     default=defaults['port'],
-    help='the port to listen on')
+    help='a port to listen on')
 
   # parser.add_option('-s', '--secret', dest='secret', metavar='string',
   #   default=defaults['secret'], help='shared secret to authenticate clients')
@@ -87,5 +103,10 @@ def arg_parser(usage, **defaults):
 
   parser.add_option('-i', '--client-id', dest='clientid', metavar='STRING',
     default=defaults['clientid'], help='bsonnetwork client id')
+
+  parser.add_option('--connect-to', dest='connect_to',
+    metavar='hostname:port[,hostname:port...]',
+    action="callback", callback=store_hostlist, type='string',
+    help='initiate connections to other hosts. useful to chain up services')
 
   return parser

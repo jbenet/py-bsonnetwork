@@ -116,7 +116,8 @@ class BsonNetworkFactory(BsonFactory):
       (__version__, clientid, options.port))
     self.clientid = clientid
     self.options = options
-
+    if hasattr(options, 'logging'):
+      self.logging = options.logging
 
 
 

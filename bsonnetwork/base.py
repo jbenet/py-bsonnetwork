@@ -4,6 +4,7 @@ bson gevent Server
 '''
 
 import logging
+import gevent
 
 from gevent import socket
 from gevent.server import StreamServer
@@ -64,7 +65,7 @@ class Factory(object):
   def error(self, error):
     logging.error(error)
 
-  def transportReceive(self, connection):
+  def transportRead(self, connection):
     while True:
       data = None
       data = connection.transport.read(1024)
@@ -72,14 +73,14 @@ class Factory(object):
         break
       connection.receivedData(data)
 
-  def serverHandler(self, sock, address):
+  def handler(self, sock, address):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     transport = Transport(sock)
     conn = self.protocol(transport, address, self)
     conn.connectionMade()
 
     try:
-      self.transportReceive(conn)
+      self.transportRead(conn)
     except Exception, e:
       self.error(e)
 
@@ -88,13 +89,10 @@ class Factory(object):
 
 
 
-
-
-
 class Server(object):
   __slots__ = ('server')
   def __init__(self, address, factory):
-    self.server = StreamServer(address, factory.serverHandler)
+    self.server = StreamServer(address, factory.handler)
 
   def serve_forever(self):
     self.server.serve_forever()
@@ -104,6 +102,33 @@ class Server(object):
 
 
 
+
+class Client(object):
+  __slots__ = ('factory', 'socket')
+
+  def __init__(self, factory):
+    self.factory = factory
+    self.socket = None
+
+  def connect(self, address, family=socket.AF_INET, type=socket.SOCK_STREAM):
+    self.socket = socket.socket(family, type)
+    try:
+      self.socket.connect(address)
+      self.factory.handler(self.socket, address)
+    except Exception, e:
+      self.factory.error(e)
+    self.socket = None
+
+  def disconnect(self):
+    if self.socket:
+      self.socket.close()
+    self.socket = None
+
+  @classmethod
+  def spawn(cls, factory, *args):
+    c = cls(factory)
+    gevent.spawn(c.connect, *args)
+    return c
 
 
 
