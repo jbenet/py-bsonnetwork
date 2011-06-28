@@ -163,7 +163,7 @@ class BsonNetworkProcess(object):
         return
 
     signal.signal(signal.SIGALRM, Alarm.handler)
-    signal.alarm(3.0)
+    signal.alarm(5.0)
 
     try:
       line = ''

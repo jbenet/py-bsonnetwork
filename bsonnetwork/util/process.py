@@ -23,9 +23,9 @@ def store_int_range(min, max):
 
     value = int(value)
     if value > max:
-      raise OptionValueError("value for %s too large (max: %d)" % (ops, max))
+      raise OptionValueError('value for %s too large (max: %d)' % (ops, max))
     if value < min:
-      raise OptionValueError("value for %s too small (min: %d)" % (ops, min))
+      raise OptionValueError('value for %s too small (min: %d)' % (ops, min))
     setattr(parser.values, option.dest, value)
 
   return store_int
@@ -46,9 +46,9 @@ def store_loglevel(option, ops, value, parser):
     elif int(value) in loglevels.values():
       setattr(parser.values, option.dest, int(value))
     else:
-      raise OptionValueError("unrecognized value for %s: %s" % (ops, value))
+      raise OptionValueError('unrecognized value for %s: %s' % (ops, value))
   except:
-    raise OptionValueError("invalid value for %s: %s" % (ops, value))
+    raise OptionValueError('invalid value for %s: %s' % (ops, value))
 
 
 
@@ -92,12 +92,12 @@ def arg_parser(usage, **defaults):
   #   default=defaults['secret'], help='shared secret to authenticate clients')
 
   parser.add_option('-c', '--clients', dest='clients', metavar='NUMBER',
-    type='int', action="callback", callback=store_int_range(1, 100000),
+    type='int', action='callback', callback=store_int_range(1, 100000),
     default=defaults['clients'],
     help='maximum number of simultaneously connected clients (1, 100000)')
 
   parser.add_option('-l', '--logging', dest='logging', metavar='log level',
-    action="callback", callback=store_loglevel, type='string',
+    action='callback', callback=store_loglevel, type='string',
     default=defaults['logging'],
     help='logging level. one of (debug, info, warning, error, critical)')
 
@@ -106,7 +106,7 @@ def arg_parser(usage, **defaults):
 
   parser.add_option('--connect-to', dest='connect_to',
     metavar='hostname:port[,hostname:port...]',
-    action="callback", callback=store_hostlist, type='string',
+    action='callback', callback=store_hostlist, type='string',
     help='initiate connections to other hosts. useful to chain up services')
 
   return parser
