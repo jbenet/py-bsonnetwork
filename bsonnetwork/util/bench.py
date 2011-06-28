@@ -6,7 +6,7 @@ import time
 import logging
 import bson
 
-from gevent import socket
+import socket
 
 try:
   bson.patch_socket(socket.socket)
@@ -14,13 +14,14 @@ except:
   import bsonbuffer
   bsonbuffer.patch_socket(socket.socket)
 
-def router_sock(clientid, addr):
+
+
+def new_sock(addr):
   logging.debug('opening router socket at %s:%d' % addr)
   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   sock.connect(addr)
-  sock.sendobj({'_src':clientid})
-  sock.recvobj()
   return sock
+
 
 
 class Connection(object):
@@ -29,7 +30,10 @@ class Connection(object):
     self.sockaddr = sockaddr
     self.stats = {'sent': 0, 'recv': 0}
 
-    self._socket = router_sock(clientid, sockaddr)
+    self._socket = new_sock(sockaddr)
+    self._socket.sendobj({'_src':clientid})
+    self.remoteid = self._socket.recvobj()['_src']
+
     logging.debug(self.clientid + ' connected')
 
   def send(self, msg):
@@ -73,23 +77,28 @@ class ConnectionPair(object):
 
 
 
+def nextMessage(pair, message):
+  '''Replace this method to run benchmarks on other services.'''
+  return {'herp':'derp'}
 
-def sendSimpleMessagesToPair(pairid, sockaddr, messages):
+
+def sendMessages(pairid, sockaddr, messages):
+  '''Replace this method to run benchmarks on other services'''
   pair = ConnectionPair(pairid, sockaddr)
-  msg = {'herp':'derp'}
   for i in range(0, messages):
-    pair.sendMessage(msg)
+    pair.sendMessage(nextMessage(pair, i))
   return pair.stats['flight_time'], pair.stats['sent']
 
 
 def sockaddrFromHost(host):
+  '''Returns a sockaddr tuple from a string HOST:PORT'''
   sockaddr = host.split(':')
   sockaddr[1] = int(sockaddr[1])
   return tuple(sockaddr)
 
 
-
 def runBenchmark(host, options):
+  '''Run benchmarks for this host.'''
   from gevent import queue
 
   sockaddr = sockaddrFromHost(host)
@@ -99,12 +108,12 @@ def runBenchmark(host, options):
   results = []
 
   def print_progress():
-    print '\rpairs left to finish:', options.pairs - len(results),
+    print '\rpairs left to finish:', options.clients - len(results),
     sys.stdout.flush()
 
   def work():
-    pairid = in_queue.get()
-    result = sendSimpleMessagesToPair(pairid, sockaddr, options.messages)
+    nextid = in_queue.get()
+    result = sendMessages(nextid, sockaddr, options.messages)
     results.append(result)
     print_progress()
 
@@ -121,8 +130,8 @@ def runBenchmark(host, options):
      #FIXME(jbenet): are these spawned greenlets actually deallocated?
 
   print 'setting up jobs...'
-  for i in range(options.pairs):
-    in_queue.put('$test-pair-%d-' % i)
+  for i in range(options.clients):
+    in_queue.put('$tester-%d-' % i)
 
   print 'running...'
   print ''
@@ -159,8 +168,8 @@ def parseOptions():
 
   parser.add_option('-c', '--concurrency', dest='concurrency',metavar='INTEGER',
     default=1, help='number of concurrent jobs to run')
-  parser.add_option('-p', '--pairs', dest='pairs', metavar='INTEGER',
-    default=1, help='number of connection pairs to make')
+  parser.add_option('-s', '--client-sets', dest='clients', metavar='INTEGER',
+    default=1, help='number of benchmark connections to make')
   parser.add_option('-m', '--messages', dest='messages', metavar='INTEGER',
     default=1, help='number of messages to send per connection')
   parser.add_option('-l', '--logging', dest='logging', metavar='loglevel',
@@ -171,7 +180,7 @@ def parseOptions():
   clipi = lambda n, minimum, maximum: max(min(int(n), maximum), minimum)
   options.concurrency = clipi(options.concurrency, 1, 1000)
   options.messages = clipi(options.messages, 0, 1000)
-  options.pairs = clipi(options.pairs, 0, 10000)
+  options.clients = clipi(options.clients, 0, 10000)
 
   options.logging = options.logging.upper()
   if options.logging not in loglevels:
@@ -201,9 +210,9 @@ def main():
   print '----- BsonRouter Bench -----'
   print 'Host:', args[0]
   print 'Concurrency:', options.concurrency
-  print 'Connection Pairs:', options.pairs
+  print 'Connection Sets:', options.clients
   print 'Messages Per Pair:', options.messages
-  print 'Total Messages:', options.messages * options.pairs * 2
+  print 'Total Messages:', options.messages * options.clients * 2
 
   runBenchmark(args[0], options)
 
