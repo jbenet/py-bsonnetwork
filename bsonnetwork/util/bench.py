@@ -7,12 +7,19 @@ import logging
 import bson
 
 from gevent import socket
-from test import dicts_equal
+
+try:
+  bson.patch_socket(socket.socket)
+except:
+  import bsonbuffer
+  bsonbuffer.patch_socket(socket.socket)
 
 def router_sock(clientid, addr):
   logging.debug('opening router socket at %s:%d' % addr)
   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   sock.connect(addr)
+  sock.sendobj({'_src':clientid})
+  sock.recvobj()
   return sock
 
 
@@ -25,45 +32,36 @@ class Connection(object):
     self._socket = router_sock(clientid, sockaddr)
     logging.debug(self.clientid + ' connected')
 
-  def identify(self, remoteclient):
-    self.send({})
-    return self.recv({'_src':remoteclient})
-
   def send(self, msg):
     msg['_src'] = self.clientid
-    self._socket.send(bson.dumps(msg))
+    self._socket.sendobj(msg)
     self.stats['sent'] += 1
     logging.debug(self.clientid + ' send ' + str(msg))
 
-  def recv(self, msg):
-    logging.debug(self.clientid + ' should recv %d' % len(bson.dumps(msg)))
-    msg2 = bson.loads(self._socket.recv(len(bson.dumps(msg))))
+  def recv(self):
+    msg = self._socket.recvobj()
     self.stats['recv'] += 1
-    logging.debug(self.clientid + ' recv ' + str(msg2))
-    return dicts_equal(msg, msg2)
+    logging.debug(self.clientid + ' recv ' + str(msg))
+    return msg
 
 
 
 class ConnectionPair(object):
   def __init__(self, pairid, sockaddr):
     self.pairid = pairid
-    self.c1 = Connection(pairid + '1', sockaddr)
     self.c2 = Connection(pairid + '2', sockaddr)
+    self.c1 = Connection(pairid + '1', sockaddr)
     self.stats = {'flight_time' : 0.0, 'sent' : 0}
 
   def _sendMessage(self, msg, frm, to):
     tic = time.time()
     msg['_dst'] = to.clientid
     frm.send(msg)
-    to.recv(msg)
+    to.recv()
     toc = time.time()
 
     self.stats['flight_time'] += (toc - tic)
     self.stats['sent'] += 1
-
-  def identify(self, remoteaddr):
-    self.c1.identify(remoteaddr)
-    self.c2.identify(remoteaddr)
 
   def sendMessage(self, msg):
     self._sendMessage(msg, self.c1, self.c2)
@@ -76,11 +74,10 @@ class ConnectionPair(object):
 
 
 
-def sendSimpleMessagesToPair(pairid, sockaddr, options):
+def sendSimpleMessagesToPair(pairid, sockaddr, messages):
   pair = ConnectionPair(pairid, sockaddr)
-  pair.identify(options.remoteid)
   msg = {'herp':'derp'}
-  for i in range(0, options.messages):
+  for i in range(0, messages):
     pair.sendMessage(msg)
   return pair.stats['flight_time'], pair.stats['sent']
 
@@ -107,7 +104,7 @@ def runBenchmark(host, options):
 
   def work():
     pairid = in_queue.get()
-    result = sendSimpleMessagesToPair(pairid, sockaddr, options)
+    result = sendSimpleMessagesToPair(pairid, sockaddr, options.messages)
     results.append(result)
     print_progress()
 
@@ -151,7 +148,7 @@ def runBenchmark(host, options):
 def parseOptions():
   import optparse
 
-  usage = 'usage: %prog [options] hostname:port remoteid'
+  usage = 'usage: %prog [options] hostname:port'
   parser = optparse.OptionParser(usage=usage)
 
   loglevels = {'DEBUG': logging.DEBUG,
@@ -187,15 +184,9 @@ def parseOptions():
     print 'Error: no host specified'
     exit(-1)
 
-  if len(args) == 1:
-    print 'Error: no remoteid specified'
-    exit(-1)
-
   if args[0].count(':') is not 1:
     print 'Error: host argument must indicate one port, e.g: hostname:12345'
     exit(-1)
-
-  options.remoteid = args[1]
 
   return options, args
 
@@ -208,7 +199,7 @@ def main():
   logging.basicConfig(level=options.logging, format=fmt)
 
   print '----- BsonRouter Bench -----'
-  print 'Host:', args[0],
+  print 'Host:', args[0]
   print 'Concurrency:', options.concurrency
   print 'Connection Pairs:', options.pairs
   print 'Messages Per Pair:', options.messages

@@ -38,6 +38,11 @@ class BsonReceiveBuffer(object):
       raise BsonLengthExceeded('max bson length %d exceeded' % self.max_bytes)
     return length
 
+  def missingLength(self):
+    '''Returns the number of bytes missing from the next document.'''
+    missing = self.nextLength() - len(self.buffer)
+    return missing if missing > 0 else 0
+
   def hasNext(self):
     '''Return wether this receiver buffer has a next element.'''
     length = self.nextLength()
@@ -61,5 +66,26 @@ class BsonReceiveBuffer(object):
 
   def append(self, string):
     self.buffer += string
+
+
+
+
+def _sendobj(self, obj):
+  '''Send a bson object from socket `self`.'''
+  self.sendall(bson.dumps(obj))
+
+def _recvobj(self):
+  '''Receive the next bson object from the socket `self`'''
+  buf = BsonReceiveBuffer()
+  buf.append(self.recv(buf.len_size))
+  while not buf.hasNext():
+    bytes = min(4096, buf.missingLength())
+    buf.append(self.recv(bytes))
+  return buf.next()
+
+def patch_socket(socket):
+  '''Setup the methods here to be available on `socket` class'''
+  socket.recvobj = _recvobj
+  socket.sendobj = _sendobj
 
 
