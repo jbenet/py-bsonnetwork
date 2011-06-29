@@ -8,6 +8,13 @@ import process
 
 from subprocess import Popen, PIPE, STDOUT
 
+try:
+  bson.patch_socket(socket.socket)
+except:
+  import bsonbuffer
+  bsonbuffer.patch_socket(socket.socket)
+
+
 class DocumentMismatchError(Exception):
   pass
 
@@ -163,7 +170,7 @@ class BsonNetworkProcess(object):
         return
 
     signal.signal(signal.SIGALRM, Alarm.handler)
-    signal.alarm(5.0)
+    signal.alarm(5)
 
     try:
       line = ''
@@ -176,6 +183,7 @@ class BsonNetworkProcess(object):
     except Alarm:
       raise OutputTimeout('Timed out waiting for output: %s' % output)
 
+    signal.alarm(0)
 
   def _sendobj(self, clientid, doc):
     '''Sends bson document `doc` via socket with `clientid`.'''
@@ -183,7 +191,11 @@ class BsonNetworkProcess(object):
 
   def _recvobj(self, clientid, doc):
     '''Receives bson document `doc` via socket `clientid`.'''
-    return bson.loads(self.socks[clientid].recv(len(bson.dumps(doc))))
+    print len(bson.dumps(doc))
+    res = self.socks[clientid].recvobj()
+    #res = self.socks[clientid].recv(len(bson.dumps(doc)))
+    print res
+    return res
 
 
   def send(self, docs):
