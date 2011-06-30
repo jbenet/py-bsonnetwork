@@ -2,13 +2,13 @@
 
 from setuptools import setup
 
-import bsonnetwork
-# not customary, but if this doesn't work, then why bother installing?
+# don't forget to change it in bsonnetwork.__init__.py
+__version__ = '0.3.2'
 
 
 setup(
   name="bsonnetwork",
-  version=bsonnetwork.__version__,
+  version=__version__,
   description="BsonNetwork python networking library",
   author="Juan Batiz-Benet",
   author_email="jbenet@cs.stanford.com",
