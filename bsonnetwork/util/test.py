@@ -129,8 +129,8 @@ class BsonNetworkProcess(object):
 
     # here, using own pipes for subprocess.
     r, w = os.pipe()
-    tf = os.fdopen(w, 'w')
-    self.tf = os.fdopen(r, 'r')
+    tf = os.fdopen(w, 'w', 1048576)
+    self.tf = os.fdopen(r, 'r', 1048576)
 
     self.proc = Popen(self.cmd, shell=True, stderr=STDOUT, stdout=tf.fileno())
     self.socks = {}
