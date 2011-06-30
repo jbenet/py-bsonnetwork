@@ -6,7 +6,7 @@ import time
 import logging
 import bson
 
-import socket
+from gevent import socket
 
 try:
   bson.patch_socket(socket.socket)
