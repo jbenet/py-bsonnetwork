@@ -1,4 +1,5 @@
 
+import os
 import bson
 import time
 import socket
@@ -126,8 +127,10 @@ class BsonNetworkProcess(object):
     '''Launch and wait for the process to initialize.'''
     print 'starting', self.cmd
 
-    tf = tempfile.NamedTemporaryFile()
-    self.tf = open(tf.name)
+    # here, using own pipes for subprocess.
+    r, w = os.pipe()
+    tf = os.fdopen(w, 'w')
+    self.tf = os.fdopen(r, 'r')
 
     self.proc = Popen(self.cmd, shell=True, stderr=STDOUT, stdout=tf.fileno())
     self.socks = {}
@@ -151,10 +154,6 @@ class BsonNetworkProcess(object):
         print line
 
     self.proc = None
-
-  def __del__(self):
-    if hasattr(self, 'proc') and self.proc:
-      self.stop()
 
   def __enter__(self):
     '''This object can be used in a with clause. starts the process.'''
