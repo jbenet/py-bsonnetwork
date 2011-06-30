@@ -5,8 +5,9 @@ import socket
 import signal
 import gevent
 import process
+import tempfile
 
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, STDOUT
 
 try:
   bson.patch_socket(socket.socket)
@@ -124,7 +125,11 @@ class BsonNetworkProcess(object):
   def start(self):
     '''Launch and wait for the process to initialize.'''
     print 'starting', self.cmd
-    self.proc = Popen(self.cmd, shell=True, stderr=STDOUT, stdout=PIPE)
+
+    tf = tempfile.NamedTemporaryFile()
+    self.tf = open(tf.name)
+
+    self.proc = Popen(self.cmd, shell=True, stderr=STDOUT, stdout=tf.fileno())
     self.socks = {}
     self._output_buffer = []
     self.waitForOutput('Starting BsonNetwork v')
@@ -140,7 +145,7 @@ class BsonNetworkProcess(object):
     if self.proc.poll() is None:
       self.proc.kill()
 
-    for line in self.proc.stdout.readlines():
+    for line in self.tf.readlines():
       line = line.strip()
       if len(line) > 1:
         print line
@@ -179,7 +184,7 @@ class BsonNetworkProcess(object):
       while output not in line:
         if len(line) > 1:
           self._output_buffer.append(line)
-        line = self.proc.stdout.readline().strip()
+        line = self.tf.readline().strip()
         if len(line) > 1:
           print line
     except Alarm:
@@ -217,7 +222,7 @@ class BsonNetworkProcess(object):
     for doc in docs:
       self.waitForOutput('[%(_dst)s] sending document' % doc)
       while printall:
-        print self.proc.stdout.readline().strip()
+        print self.tf.readline().strip()
 
       doc2 = self._recvobj(doc['_dst'], doc)
       if not dicts_equal(doc, doc2):
