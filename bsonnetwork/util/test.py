@@ -134,7 +134,7 @@ class BsonNetworkProcess(object):
     '''Stop the process, and print out all remaining output.'''
     for clientid in self.socks.keys():
       self.disconnect(clientid)
-    del self.socks
+    self.socks = {}
 
     self.proc.kill()
 
