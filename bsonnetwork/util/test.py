@@ -136,9 +136,9 @@ class BsonNetworkProcess(object):
       self.disconnect(clientid)
     self.socks = {}
 
-    self.proc.kill()
+    self.proc.terminate()
     if self.proc.poll() is None:
-      self.proc.terminate()
+      self.proc.kill()
 
     for line in self.proc.stdout.readlines():
       line = line.strip()
