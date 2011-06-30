@@ -104,14 +104,14 @@ class BsonNetworkProcess(object):
     if isinstance(cmd, str):
       cmd = cmd.split(' ')
 
-    if '-p' not in cmd:
+    if '-p' not in cmd and '--port' not in cmd:
       if port is None:
         port = process.randomPort()
       cmd.append('-p')
       cmd.append(str(port))
     self.port = int(cmd[cmd.index('-p') + 1])
 
-    if '-i' not in cmd:
+    if '-i' not in cmd and '--client-id' not in cmd:
       if clientid is None:
         clientid = 'server'
       cmd.append('-i')
