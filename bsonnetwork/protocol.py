@@ -7,7 +7,7 @@ import logging
 import bson
 import struct
 
-from base import Protocol, Factory
+from base import Protocol, Factory, Client
 
 
 
@@ -111,6 +111,8 @@ class BsonFactory(Factory):
   '''Twisted-like factory facility.'''
 
   protocol = BsonProtocol
+
+
 
 
 

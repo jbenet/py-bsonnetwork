@@ -7,6 +7,7 @@ import signal
 import gevent
 import process
 import tempfile
+import datetime
 
 from subprocess import Popen, STDOUT, PIPE
 
@@ -166,8 +167,9 @@ class BsonNetworkProcess(object):
         return
 
     signal.signal(signal.SIGALRM, Alarm.handler)
-    signal.alarm(5)
-
+    signal.alarm(10)
+    tic = datetime.datetime.now()
+    print 'TIC:', tic
     try:
       line = ''
       while output not in line:
@@ -177,8 +179,11 @@ class BsonNetworkProcess(object):
         if len(line) > 1:
           print line
     except Alarm:
+      toc = datetime.datetime.now()
+      print 'RAISE TOC:', toc, ' :: ', (toc - tic)
       raise OutputTimeout('Timed out waiting for output: %s' % output)
-
+    toc = datetime.datetime.now()
+    print 'TOC:', toc, ' :: ', (toc - tic)
     signal.alarm(0)
 
   def _sendobj(self, clientid, doc):

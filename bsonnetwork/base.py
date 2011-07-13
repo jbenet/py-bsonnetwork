@@ -73,11 +73,14 @@ class Factory(object):
         break
       connection.receivedData(data)
 
-  def handler(self, sock, address):
+  def handler(self, sock, address, client=None):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     transport = Transport(sock)
     conn = self.protocol(transport, address, self)
     conn.connectionMade()
+
+    if client:
+      client.connection = conn
 
     try:
       self.transportRead(conn)
@@ -104,17 +107,18 @@ class Server(object):
 
 
 class Client(object):
-  __slots__ = ('factory', 'socket')
+  __slots__ = ('factory', 'socket', 'connection')
 
   def __init__(self, factory):
     self.factory = factory
     self.socket = None
+    self.connection = None
 
   def connect(self, address, family=socket.AF_INET, type=socket.SOCK_STREAM):
     self.socket = socket.socket(family, type)
     try:
       self.socket.connect(address)
-      self.factory.handler(self.socket, address)
+      self.factory.handler(self.socket, address, client=self)
     except Exception, e:
       self.factory.error(e)
     self.socket = None
@@ -123,6 +127,9 @@ class Client(object):
     if self.socket:
       self.socket.close()
     self.socket = None
+
+  def send(self, data):
+    self.socket.send(data)
 
   @classmethod
   def spawn(cls, factory, *args):
