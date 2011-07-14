@@ -260,4 +260,12 @@ class BsonNetworkProcess(object):
       self._sendobj(clientid, { '_src' : clientid } )
     self.waitForOutput('[%s] connection identified' % clientid)
 
+  def reidentify(self, oldid, newid, trigger=True):
+    '''Re-identifies the socket with `oldid` with `newid`.'''
+    if trigger:
+      self.socks[newid] = self.socks[oldid]
+      del self.socks[oldid]
+      self._sendobj(newid, { '_src' : newid } )
+    self.waitForOutput('[%s] connection identified' % newid)
+
 

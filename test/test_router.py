@@ -22,6 +22,20 @@ class TestRouter(unittest.TestCase):
       r.disconnect('A')
       r.disconnect('B')
 
+  def test_reidentify(self):
+    with BNProcess('python bsonnetwork/router.py -i router') as r:
+      r.connect('A')
+      r.connect('B')
+      r.identify('A')
+      r.identify('B')
+      r.send_and_receive('A', 'B', {'herp' : 'derp'})
+      r.reidentify('A', 'C')
+      r.send_and_receive('C', 'B', {'herp' : 'derp'})
+      r.reidentify('B', 'D')
+      r.send_and_receive('C', 'D', {'herp' : 'derp'})
+      r.disconnect('C')
+      r.disconnect('D')
+
   def test_send_self(self):
     with BNProcess('python bsonnetwork/router.py -i router') as r:
       r.connect('A')
