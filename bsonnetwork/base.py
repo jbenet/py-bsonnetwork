@@ -5,6 +5,7 @@ bson gevent Server
 
 import logging
 import gevent
+import traceback
 
 from gevent import socket
 from gevent.server import StreamServer
@@ -85,7 +86,8 @@ class Factory(object):
     try:
       self.transportRead(conn)
     except Exception, e:
-      self.error(e)
+      errstr = 'unknown error: %s \n %s'
+      self.error(errstr % (str(e), str(traceback.format_exc())) )
 
     transport.loseConnection()
     conn.connectionLost('Connection Closed')
