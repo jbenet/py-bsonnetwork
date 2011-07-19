@@ -80,7 +80,7 @@ class BsonNetworkProtocol(BsonProtocol):
     self.forwardMessage(doc)
 
   def bsonDecodingError(self, error):
-    self.log('error', 'received bson parsing error: %s' % e)
+    self.log('error', 'received bson parsing error: %s' % error)
 
   def validMessage(self, doc):
     invalid = 'bson document invalid: %s'
