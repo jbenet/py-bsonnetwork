@@ -70,16 +70,18 @@ class BsonProtocol(Protocol):
     if len(bsonData) >= self.max_bytes:
       errorStr = 'Trying to send %d bytes whereas maximum is %d'
       raise LengthExceededError(errorStr % (len(bsonData), self.max_bytes))
+
     self.transport.write(bsonData)
 
   def sendBson(self, message):
     '''Send a bson document to the other end of the connection.'''
     self.sendBsonData(bson.dumps(message)) # let exceptions propagate up
 
+
   def receivedData(self, received):
     '''Receive int prefixed data until full bson doc.'''
 
-    self.recv_buffer = self.recv_buffer + received
+    self.recv_buffer += received
 
     while len(self.recv_buffer) >= self.length_size:
       length ,= struct.unpack(
@@ -98,6 +100,7 @@ class BsonProtocol(Protocol):
       try:
         bsonDoc = bson.loads(bsonData)
       except Exception, e:
+        e.bsonData = bsonData
         self.bsonDecodingError(e)
         # Note: at this point, we may be off sync (warranting disconnect)
         #       but let's attempt to keep going!
