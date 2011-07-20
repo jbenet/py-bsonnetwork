@@ -21,7 +21,7 @@ class Transport(object):
     self.sock = socket
 
   def write(self, data):
-    self.sock.send(data)
+    self.sock.sendall(data)
 
   def read(self, bytes):
     return self.sock.recv(bytes)
