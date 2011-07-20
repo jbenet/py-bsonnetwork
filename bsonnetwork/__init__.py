@@ -3,7 +3,7 @@ BsonNetwork Package
 '''
 
 __author__ = 'Juan Batiz-Benet'
-__version__ = '0.3.3'
+__version__ = '0.3.4'
 # don't forget to change it in setup.py
 
 from network import BsonNetworkFactory, BsonNetworkProtocol

@@ -3,7 +3,7 @@
 from setuptools import setup
 
 # don't forget to change it in bsonnetwork.__init__.py
-__version__ = '0.3.3'
+__version__ = '0.3.4'
 
 
 setup(
