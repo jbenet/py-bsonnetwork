@@ -39,9 +39,17 @@ class BsonNetworkProtocol(BsonProtocol):
     raise NotImplementedError
 
   def receivedControlMessage(self, msg):
-    '''Identify sender by default.'''
+    '''Identify sender by default. Also, respond to echoaddress.'''
     self.clientid = msg['_src']
     self.log('debug', 'connection identified')
+
+    response = {}
+    if 'echoaddress' in msg:
+      response['echoaddress'] = '%s:%d' % self.address
+
+    if len(response) > 0:
+      self.sendMessage(response)
+
 
   def receivedForwardMessage(self, msg):
     '''Drop bson docs not for us by default.'''
