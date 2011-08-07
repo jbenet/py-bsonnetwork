@@ -52,19 +52,29 @@ def store_loglevel(option, ops, value, parser):
 
 
 
+def addressFromString(string):
+  address = string.split(':')
+  return (address[0], int(address[1]))
+
+def validateAddress(addr):
+  if addr[1] > 65535 or addr[1] < 1:
+    raise OptionValueError('address %s:%d has port out of range' % addr)
+
+
 def store_hostlist(option, ops, value, parser):
   '''optparse store callback that validates a host list'''
 
-  def addressFromString(string):
-    address = string.split(':')
-    return (address[0], int(address[1]))
   hostlist = map(addressFromString, value.split(','))
-
-  for addr in hostlist:
-    if addr[1] > 65535 or addr[1] < 1:
-      raise OptionValueError('hostlist address %s:%d port out of range' % addr)
+  map(validateAddress, hostlist)
 
   setattr(parser.values, option.dest, hostlist)
+
+def store_host(option, ops, value, parser):
+  '''optparse store callback that validates a host'''
+
+  addr = addressFromString(value)
+  validateAddress(addr)
+  setattr(parser.values, option.dest, addr)
 
 
 
