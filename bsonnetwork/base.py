@@ -141,6 +141,26 @@ class Client(object):
 
 
 
+class PersistentClient(Client):
+
+  __slots__ = Client.__slots__ + ('persist', )
+
+  def __init__(self, factory):
+    super(PersistentClient, self).__init__(factory)
+    self.persist = False
+
+  def connect(self, address, family=socket.AF_INET, type=socket.SOCK_STREAM):
+    self.persist = True
+    while self.persist:
+      super(PersistentClient, self).connect(address, family, type)
+      gevent.sleep(1)
+
+  def disconnect(self):
+    self.persist = False
+    super(PersistentClient, self).disconnect()
+
+
+
 if __name__ == '__main__':
   '''Testing'''
 
