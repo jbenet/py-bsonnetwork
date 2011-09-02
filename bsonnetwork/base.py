@@ -9,24 +9,39 @@ import traceback
 
 from gevent import socket
 from gevent.server import StreamServer
-
+from gevent.queue import Queue
 
 
 
 class Transport(object):
-  '''Socket wrapper to emulate twisteds Transport'''
-  __slots__ = ('sock')
+  '''Greenlet-safe socket wrapper to emulate twisteds Transport'''
+  __slots__ = ('sock', 'queue', 'send_greenlet')
 
   def __init__(self, socket):
     self.sock = socket
+    self.queue = Queue(maxsize=1000) # maxsize just in case...
+    self.send_greenlet = gevent.spawn(self._sendloop)
+
+  def _sendloop(self):
+    '''The need for this sendloop is that multiple greenlets may attempt to
+    call `write` simultaneously. Thus, the call to `sock.sendall` must be
+    protected. This could instead be achieved with a Semaphore, but that would
+    perhaps block high priority greenlets. The approach here, using a send
+    queue, seems to be the best way to keep faulty or slow sockets from
+    affecting others.
+    '''
+    while True:
+      self.sock.sendall(self.queue.get())
+
 
   def write(self, data):
-    self.sock.sendall(data)
+    self.queue.put(data)
 
   def read(self, bytes):
     return self.sock.recv(bytes)
 
   def loseConnection(self):
+    self.send_greenlet.kill()
     self.sock.close()
 
 
