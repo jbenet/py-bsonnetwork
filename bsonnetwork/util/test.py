@@ -9,7 +9,7 @@ import process
 import tempfile
 import datetime
 
-from subprocess import Popen, STDOUT, PIPE
+from geventpopen import Popen, STDOUT, PIPE
 
 try:
   bson.patch_socket(socket.socket)
