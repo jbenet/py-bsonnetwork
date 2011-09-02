@@ -104,7 +104,6 @@ class TestUtil(unittest.TestCase):
     ProtocolTest([mf, mf, mf, mf, mf])
     ProtocolTest([mf, mf, mf, mf, mf])
     ProtocolTest([mf, mf, mf, mf, mf])
-    assert False
 
 if __name__ == '__main__':
   unittest.main()
