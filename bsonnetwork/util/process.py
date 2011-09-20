@@ -94,7 +94,7 @@ def arg_parser(usage, **defaults):
   parser = optparse.OptionParser(usage)
 
   parser.add_option('-p', '--port',  dest='port',  metavar='PORT', type='int',
-    action='callback', callback=store_int_range(1024, 65535),
+    action='callback', callback=store_int_range(1, 65535),
     default=defaults['port'],
     help='a port to listen on')
 
