@@ -182,7 +182,7 @@ class PersistentClient(Client):
 
   @classmethod
   def configured_socket(cls, family, type):
-    sock = super(PersistentClient, self).configured_socket(family, type)
+    sock = super(PersistentClient, cls).configured_socket(family, type)
     sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, 5)
     sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, 5)
     sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, 1)
