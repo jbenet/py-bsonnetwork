@@ -133,6 +133,7 @@ class Client(object):
 
   def connect(self, address, family=socket.AF_INET, type=socket.SOCK_STREAM):
     self.socket = socket.socket(family, type)
+    self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     try:
       self.socket.connect(address)
       self.factory.handler(self.socket, address, client=self)
