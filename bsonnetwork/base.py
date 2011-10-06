@@ -132,8 +132,7 @@ class Client(object):
     self.connection = None
 
   def connect(self, address, family=socket.AF_INET, type=socket.SOCK_STREAM):
-    self.socket = socket.socket(family, type)
-    self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+    self.socket = self.configured_socket(family, type)
     try:
       self.socket.connect(address)
       self.factory.handler(self.socket, address, client=self)
@@ -148,6 +147,12 @@ class Client(object):
 
   def send(self, data):
     self.socket.send(data)
+
+  @classmethod
+  def configured_socket(cls, family, type):
+    sock = socket.socket(family, type)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+    return sock
 
   @classmethod
   def spawn(cls, factory, *args):
@@ -174,6 +179,14 @@ class PersistentClient(Client):
   def disconnect(self):
     self.persist = False
     super(PersistentClient, self).disconnect()
+
+  @classmethod
+  def configured_socket(cls, family, type):
+    sock = super(PersistentClient, self).configured_socket(family, type)
+    sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, 5)
+    sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, 5)
+    sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, 1)
+    return sock
 
 
 
