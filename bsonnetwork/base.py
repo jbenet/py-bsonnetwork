@@ -11,7 +11,7 @@ from gevent import socket
 from gevent.server import StreamServer
 from gevent.queue import Queue
 
-
+from util.sockutil import set_tcp_keepalive
 
 class Transport(object):
   '''Greenlet-safe socket wrapper to emulate twisteds Transport'''
@@ -183,9 +183,7 @@ class PersistentClient(Client):
   @classmethod
   def configured_socket(cls, family, type):
     sock = super(PersistentClient, cls).configured_socket(family, type)
-    sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, 5)
-    sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, 5)
-    sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, 1)
+    set_tcp_keepalive(sock, tcp_keepidle=5, tcp_keepcnt=5, tcp_keepintvl=1)
     return sock
 
 
