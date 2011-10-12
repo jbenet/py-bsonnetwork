@@ -48,6 +48,7 @@ class BsonNetworkProtocol(BsonProtocol):
       response['echoaddress'] = '%s:%d' % self.address
 
     if len(response) > 0:
+      response['_dst'] = msg['_src']
       self.sendMessage(response)
 
 
