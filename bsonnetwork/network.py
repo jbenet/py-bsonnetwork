@@ -63,7 +63,7 @@ class BsonNetworkProtocol(BsonProtocol):
       return
 
     self.log('debug', 'document parsed %s' % str(doc))
-    if '_dst' not in doc:
+    if '_dst' not in doc or '_ctl' in doc:
       self.log('debug', 'handling identification message')
       self.receivedControlMessage(doc)
       return
