@@ -41,7 +41,7 @@ class BsonNetworkProtocol(BsonProtocol):
   def receivedControlMessage(self, msg):
     '''Identify sender by default. Also, respond to echoaddress.'''
 
-    if '_dst' not in doc:
+    if '_dst' not in msg:
       self.clientid = msg['_src']
       self.log('debug', 'connection identified')
 
