@@ -39,12 +39,12 @@ class BsonRouterFactory(BsonNetworkFactory):
     if connections_open > self.options.clients:
       self.logging.error( \
         '[router] refused connection to %s (max clients %d)' % \
-          (clientid, connections_open)
+          (clientid, connections_open))
       conn.close()
       return
 
     self.logging.info('[router] client connected: %s (%d)' % \
-      (clientid, connections_open)
+      (clientid, connections_open))
     self.connections_[clientid] = conn
 
   def removeClient(self, clientid):
