@@ -7,6 +7,7 @@ __version__ = '0.2'
 
 import logging
 import nanotime
+import gevent
 
 from base import PersistentClient
 from protocol import BsonProtocol, BsonFactory
@@ -140,6 +141,8 @@ class BsonNetworkFactory(BsonFactory):
     self.options = options
     if hasattr(options, 'logging'):
       self.logging = options.logging
+
+
 
 
 
