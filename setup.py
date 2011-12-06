@@ -15,6 +15,6 @@ setup(
   url="http://github.com/jbenet/bsonnetwork",
   keywords=["bsonnetwork", "bson", "networking library"],
   packages=["bsonnetwork"],
-  install_requires=["bson", "gevent"],
+  install_requires=["bson", "gevent", "nanotime"],
   license="MIT License"
 )
