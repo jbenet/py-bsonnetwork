@@ -163,6 +163,7 @@ class BsonNetworkPersistentClient(PersistentClient):
       timediff = nanotime.nanotime.now() - self.connection.lastSendTime
       if timediff > self.keepalive_timeout:
         self.connection.sendMessage({'_ctl':'keepalive', 'echoaddress':True})
+        logging.info('[BsonNetworkPersistentClient] sent keepalive')
 
 
 
