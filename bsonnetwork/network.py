@@ -54,7 +54,6 @@ class BsonNetworkProtocol(BsonProtocol):
 
     if len(response) > 0:
       response['_dst'] = msg['_src']
-      response['_ctl'] = msg['_ctl'] if '_ctl' in msg else True
       self.sendMessage(response)
 
 
