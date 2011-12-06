@@ -169,7 +169,7 @@ class BsonNetworkPersistentClient(PersistentClient):
       gevent.sleep(self.keepalive_timeout.seconds() / 5.0)
 
       # only send keepalive if we havent gotten data for keepalive_timeout
-      if hasattr(self.connection, 'lastSendTime'):
+      if hasattr(self.connection, 'lastRecvTime'):
         timediff = nanotime.nanotime.now() - self.connection.lastRecvTime
         if timediff > self.keepalive_timeout:
           self.connection.sendMessage(keepalive_msg)
