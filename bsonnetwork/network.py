@@ -6,6 +6,7 @@ bson gevent bson network
 __version__ = '0.2'
 
 import logging
+import nanotime
 
 from protocol import BsonProtocol, BsonFactory
 
@@ -65,6 +66,8 @@ class BsonNetworkProtocol(BsonProtocol):
       return
 
     self.log('debug', 'document parsed %s' % str(doc))
+    self.lastRecvTime = nanotime.nanotime.now()
+
     if '_dst' not in doc:
       self.log('debug', 'handling identification message')
       self.receivedControlMessage(doc)
@@ -85,6 +88,7 @@ class BsonNetworkProtocol(BsonProtocol):
     self.log('debug', 'sending document %s' % str(doc))
     try:
       self.sendBson(doc)
+      self.lastSendTime = nanotime.nanotime.now()
     except Exception, e:
       self.log('error', 'sending bson document error: %s' % e)
 
