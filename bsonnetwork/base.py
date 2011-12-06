@@ -146,7 +146,7 @@ class Client(object):
     self.socket = None
 
   def send(self, data):
-    self.socket.send(data)
+    self.connection.sendData(data)
 
   @classmethod
   def configured_socket(cls, family, type):
