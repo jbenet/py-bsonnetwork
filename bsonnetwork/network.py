@@ -26,7 +26,7 @@ class BsonNetworkProtocol(BsonProtocol):
 
     # send identification message
     self.log('debug', 'sending identification message')
-    self.sendBson({'_src' : self.factory.clientid})
+    self.forwardMessage({'_src' : self.factory.clientid})
 
   def connectionLost(self, reason):
     self.close()
