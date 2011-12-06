@@ -159,13 +159,19 @@ class BsonNetworkPersistentClient(PersistentClient):
 
   keepalive_timeout = nanotime.seconds(1)
   def _keepalive_loop(self):
+
+    keepalive_msg = {}
+    keepalive_msg['_src'] = self.factory.clientid
+    keepalive_msg['_ctl'] = 'keepalive'
+    keepalive_msg['echoaddress'] = True
+
     while self.persist:
       gevent.sleep(self.keepalive_timeout.seconds() / 5.0)
 
       # only send keepalive if we havent gotten data for keepalive_timeout
       timediff = nanotime.nanotime.now() - self.connection.lastSendTime
       if timediff > self.keepalive_timeout:
-        self.connection.sendMessage({'_ctl':'keepalive', 'echoaddress':True})
+        self.connection.forwardMessage(keepalive_msg)
         logging.info('[BsonNetworkPersistentClient] sent keepalive')
 
 
