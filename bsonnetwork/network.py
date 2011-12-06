@@ -8,6 +8,7 @@ __version__ = '0.2'
 import logging
 import nanotime
 
+from base import PersistentClient
 from protocol import BsonProtocol, BsonFactory
 
 class BsonNetworkProtocol(BsonProtocol):
@@ -139,6 +140,31 @@ class BsonNetworkFactory(BsonFactory):
     self.options = options
     if hasattr(options, 'logging'):
       self.logging = options.logging
+
+
+
+class BsonNetworkPersistentClient(PersistentClient):
+
+  def connect(self, *args, **kwargs):
+    self.keepalive_greenlet = gevent.spawn(self._keepalive_loop)
+    super(BsonNetworkPersistentClient, self).connect(*args, **kwargs)
+
+  def disconnect(self):
+    self.keepalive_greenlet.kill()
+    del self.keepalive_greenlet
+    super(BsonNetworkPersistentClient, self).disconnect()
+
+  keepalive_timeout = nanotime.seconds(1)
+  def _keepalive_loop(self):
+    while self.persist:
+      gevent.sleep(self.keepalive_timeout / 5.0)
+
+      # only send keepalive if we havent gotten data for keepalive_timeout
+      timediff = nanotime.nanotime.now() - self.connection.lastSendTime
+      if timediff > self.keepalive_timeout:
+        self.connection.sendMessage({'_ctl':'keepalive', 'echoaddress':True})
+
+
 
 
 
