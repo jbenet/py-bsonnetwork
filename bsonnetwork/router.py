@@ -35,6 +35,10 @@ class BsonRouterFactory(BsonNetworkFactory):
     self.connections_ = {}
 
   def registerClient(self, clientid, conn):
+
+    if clientid in self.connections_ and self.connections_[clientid] == conn:
+      return # already connected. this is some other ctl msg.
+
     connections_open = len(self.connections_)
     if connections_open > self.options.clients:
       self.logging.error( \
