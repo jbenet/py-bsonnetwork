@@ -162,6 +162,7 @@ class Client(object):
 
 
 
+
 class PersistentClient(Client):
 
   __slots__ = Client.__slots__ + ('persist', )
