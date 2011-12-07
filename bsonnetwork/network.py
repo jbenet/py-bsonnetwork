@@ -15,6 +15,11 @@ from protocol import BsonProtocol, BsonFactory
 class BsonNetworkProtocol(BsonProtocol):
   '''BsonNetwork Protocol'''
 
+  def __init__(self, *args, **kwargs):
+    super(BsonNetworkProtocol, self).__init__(*args, **kwargs)
+    self.lastRecvTime = None
+    self.lastSendTime = None
+
   def log(self, level, message):
     if not self.factory.logging or not hasattr(self.factory.logging, level):
       return
@@ -160,6 +165,15 @@ class BsonNetworkPersistentClient(PersistentClient):
     del self.keepalive_greenlet
     super(BsonNetworkPersistentClient, self).disconnect()
 
+  def _keepalive_log(self, message):
+    fmt = '[%s][%s] lastSendTime: %s lastRecvTime: %s -- keepalive %s'
+    log = fmt % ('BsonNetworkPersistentClient', \
+                  self.connection.clientid, \
+                  self.lastSendTime, \
+                  self.lastRecvTime, \
+                  message)
+    logging.info(log)
+
   keepalive_timeout = nanotime.seconds(1)
   def _keepalive_loop(self):
 
@@ -168,12 +182,22 @@ class BsonNetworkPersistentClient(PersistentClient):
     while self.persist:
       gevent.sleep(self.keepalive_timeout.seconds() / 5.0)
 
-      # only send keepalive if we havent gotten data for keepalive_timeout
-      if hasattr(self.connection, 'lastRecvTime'):
-        timediff = nanotime.nanotime.now() - self.connection.lastRecvTime
-        if timediff > self.keepalive_timeout:
-          self.connection.sendMessage(keepalive_msg)
-          logging.info('[BsonNetworkPersistentClient] sent keepalive')
+      # only send keepalive if we have started receiving data.
+      # otherwise we risk trampling over the connection initiation process.
+      if self.connection.lastRecvTime:
+        self._keepalive_log('skipped (no data sent yet)')
+        continue
+
+      # only send keepalive if the timeout has expired.
+      timediff = nanotime.nanotime.now() - self.connection.lastRecvTime
+      if timediff < self.keepalive_timeout:
+        msg = 'not due yet (time diff %s < timeout %s)'
+        self._keepalive_log(msg % (timediff, self.keepalive_timeout))
+        continue
+
+      # ok, we should send keepalive.
+      self.connection.sendMessage(keepalive_msg)
+      self._keepalive_log('sent')
 
 
 
