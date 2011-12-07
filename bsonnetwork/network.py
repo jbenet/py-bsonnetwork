@@ -191,8 +191,8 @@ class BsonNetworkPersistentClient(PersistentClient):
       # only send keepalive if the timeout has expired.
       timediff = nanotime.nanotime.now() - self.connection.lastRecvTime
       if timediff < self.keepalive_timeout:
-        msg = 'not due yet (time diff %s < timeout %s)'
-        self._keepalive_log(msg % (timediff, self.keepalive_timeout))
+        self._keepalive_log('not due yet (time diff %s < timeout %s)' % \
+          (timediff.seconds(), self.keepalive_timeout.seconds()))
         continue
 
       # ok, we should send keepalive.
