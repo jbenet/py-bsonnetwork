@@ -166,10 +166,9 @@ class BsonNetworkPersistentClient(PersistentClient):
     super(BsonNetworkPersistentClient, self).disconnect()
 
   def _keepalive_log(self, message):
-    fmt = '[%s][%s] lastSendTime: %s lastRecvTime: %s -- keepalive %s'
+    fmt = '[%s][%s] lastRecvTime: %s -- keepalive %s'
     log = fmt % ('BsonNetworkPersistentClient', \
                   self.connection.clientid, \
-                  self.connection.lastSendTime, \
                   self.connection.lastRecvTime, \
                   message)
     logging.info(log)
