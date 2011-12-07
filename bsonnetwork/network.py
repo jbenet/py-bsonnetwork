@@ -169,8 +169,8 @@ class BsonNetworkPersistentClient(PersistentClient):
     fmt = '[%s][%s] lastSendTime: %s lastRecvTime: %s -- keepalive %s'
     log = fmt % ('BsonNetworkPersistentClient', \
                   self.connection.clientid, \
-                  self.lastSendTime, \
-                  self.lastRecvTime, \
+                  self.connection.lastSendTime, \
+                  self.connection.lastRecvTime, \
                   message)
     logging.info(log)
 
