@@ -6,6 +6,7 @@ bson gevent Server
 import logging
 import bson
 import struct
+import gevent
 
 from base import Protocol, Factory, Client
 
@@ -106,6 +107,7 @@ class BsonProtocol(Protocol):
         #       but let's attempt to keep going!
       else:
         self.receivedBson(bsonDoc)
+        gevent.sleep(0) # cooperative yield. we got a document (a unit of work)
 
 
 

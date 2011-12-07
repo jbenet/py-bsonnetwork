@@ -32,6 +32,7 @@ class Transport(object):
     '''
     while True:
       self.sock.sendall(self.queue.get())
+      gevent.sleep(0) # cooperative yield
 
 
   def write(self, data):
@@ -67,6 +68,8 @@ class Protocol(object):
 
   def receivedData(self, data):
     '''Override this to handle data sent to this service.'''
+    # protocols should cooperatively yield after performing work units
+    # yield with gevent.sleep(0)
     raise NotImplementedError
 
 
