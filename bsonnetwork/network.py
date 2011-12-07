@@ -184,8 +184,8 @@ class BsonNetworkPersistentClient(PersistentClient):
 
       # only send keepalive if we have started receiving data.
       # otherwise we risk trampling over the connection initiation process.
-      if self.connection.lastRecvTime:
-        self._keepalive_log('skipped (no data sent yet)')
+      if not self.connection.lastRecvTime:
+        self._keepalive_log('skipped (no data received yet)')
         continue
 
       # only send keepalive if the timeout has expired.
