@@ -76,7 +76,7 @@ class BsonNetworkProtocol(BsonProtocol):
       self.log('warning', 'data discarded (invalid document)')
       return
 
-    self.log('info', 'document parsed %s' % str(doc))
+    self.log('info', 'document parsed from %s' % doc['_src'])
     self.log('debug', 'document parsed %s' % str(doc))
     self.lastRecvTime = nanotime.nanotime.now()
 
