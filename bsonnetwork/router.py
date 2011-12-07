@@ -9,7 +9,7 @@ __version__ = '0.3.0'
 class BsonRouterProtocol(BsonNetworkProtocol):
 
   def receivedMessage(self, msg):
-    self.log('error', 'router received message addressed to it.')
+    self.log('error', 'router received message addressed to it: %s' % msg)
 
   def receivedControlMessage(self, msg):
     BsonNetworkProtocol.receivedControlMessage(self, msg)

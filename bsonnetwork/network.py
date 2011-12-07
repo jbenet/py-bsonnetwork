@@ -32,7 +32,7 @@ class BsonNetworkProtocol(BsonProtocol):
     self.log('debug', 'connection made')
 
     # send identification message
-    self.log('debug', 'sending identification message')
+    self.log('info', 'sending identification message')
     self.forwardMessage({'_src' : self.factory.clientid})
 
   def connectionLost(self, reason):
@@ -51,7 +51,7 @@ class BsonNetworkProtocol(BsonProtocol):
 
     if '_dst' not in msg:
       self.clientid = msg['_src']
-      self.log('debug', 'connection identified')
+      self.log('info', 'connection identified')
 
     response = {}
     if 'echoaddress' in msg:
@@ -70,31 +70,35 @@ class BsonNetworkProtocol(BsonProtocol):
     pass
 
   def receivedBson(self, doc):
+    self.log('info', 'bson document received')
     self.log('debug', 'bson document received')
     if not self.validMessage(doc):
-      self.log('debug', 'data discarded (invalid document)')
+      self.log('warning', 'data discarded (invalid document)')
       return
 
+    self.log('info', 'document parsed %s' % str(doc))
     self.log('debug', 'document parsed %s' % str(doc))
     self.lastRecvTime = nanotime.nanotime.now()
 
     if '_dst' not in doc:
-      self.log('debug', 'handling identification message')
+      self.log('info', 'handling identification message')
       self.receivedControlMessage(doc)
       return
 
     if doc['_dst'] == self.factory.clientid and '_ctl' in doc:
-      self.log('debug', 'handling control message')
+      self.log('info', 'handling control message')
       self.receivedControlMessage(doc)
       return
 
     if doc['_dst'] != self.factory.clientid:
+      self.log('info', 'handling forward message')
       self.receivedForwardMessage(doc)
       return
 
     self.receivedMessage(doc)
 
   def forwardMessage(self, doc):
+    self.log('info', 'sending document')
     self.log('debug', 'sending document %s' % str(doc))
     try:
       self.sendBson(doc)
